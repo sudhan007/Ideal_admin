@@ -140,7 +140,7 @@ export const updateStudentProfile = async (
     ctx: Context<{ body: StudentUpdateInput }>
 ) => {
     const { body, set, store } = ctx;
-    const { studentProfile, ...updateDetails } = body;  // flat fields
+    const { studentProfile, ...updateDetails } = body;
     const { id } = store as StoreType;
     const studentCollection = await getCollection(STUDENTS_COLLECTION);
 
@@ -162,7 +162,6 @@ export const updateStudentProfile = async (
         if (updateDetails.email) {
             duplicateCheck.$or.push({ email: updateFields.email });
         }
-
         if (duplicateCheck.$or.length > 0) {
             duplicateCheck._id = { $ne: new ObjectId(id) };
             const existing = await studentCollection.findOne(duplicateCheck);

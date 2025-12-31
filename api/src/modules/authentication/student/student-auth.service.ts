@@ -33,7 +33,6 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 return {
                     message: "Login successful",
                     status: true,
-                    student,
                     token,
                     isNewUser: false,
                 };
@@ -61,7 +60,6 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 message: "Account created successfully",
                 status: true,
                 token,
-                student,
                 isNewUser: true,
             };
         } else if (loginMethod === "EMAIL") {
@@ -85,7 +83,6 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 return {
                     message: "Login successful",
                     status: true,
-                    student,
                     token,
                     isNewUser: false,
                 };
@@ -123,7 +120,6 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
             return {
                 message: "Account created successfully",
                 status: true,
-                student,
                 token,
                 isNewUser: true,
             };
