@@ -29,8 +29,8 @@ export const createCourse = async (ctx: Context<{ body: CourseCreateInput }>) =>
     const courseData = {
       courseName,
       mentor: mentor ? new ObjectId(mentor) : null,
-      strikePrice,
-      actualPrice,
+      strikePrice: Number(strikePrice),
+      actualPrice: Number(actualPrice),
       board,
       grade,
       bannerImage: fullUrl ?? fileKey,
@@ -95,22 +95,27 @@ export const updateCourse = async (ctx: Context<{ body: CourseUpdateInput, param
 
 export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) => {
   const { set, query } = ctx;
-  const page = Math.max(1, Number(query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
   const skip = (page - 1) * limit;
   const search = query.search?.trim() || '';
   const sortBy = query.sortBy || 'createdAt';
   const sortOrder = query.sortOrder === 'desc' ? -1 : 1;
-
+  const grade = query.grade;
+  const board = query.board;
   try {
     const courseCollection = await getCollection(COURSE_COLLECTION);
     const pipeline: any[] = [];
 
-    // Basic filter (without search)
     const filter: any = { isDeleted: false, isActive: true };
-
+    if (grade) {
+      filter.grade = grade;
+    }
+    if (board) {
+      filter.board = board;
+    }
     pipeline.push({ $match: filter });
-
+    console.log(filter)
     // Lookup mentor
     pipeline.push({
       $lookup: {
@@ -125,6 +130,49 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
       $unwind: {
         path: '$mentor',
         preserveNullAndEmptyArrays: true
+      }
+    });
+
+    pipeline.push({
+      $lookup: {
+        from: 'chapters', // Replace with your actual chapters collection name
+        let: { courseId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$courseId', '$$courseId'] },
+                  { $eq: ['$isActive', true] },
+                  { $eq: ['$isDeleted', false] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'chapters'
+      }
+    });
+
+    // Lookup lessons (only active and not deleted)
+    pipeline.push({
+      $lookup: {
+        from: 'lessons', // Replace with your actual lessons collection name
+        let: { courseId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$courseId', '$$courseId'] },
+                  { $eq: ['$isActive', true] },
+                  { $eq: ['$isDeleted', false] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'lessons'
       }
     });
 
@@ -158,6 +206,8 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
               createdAt: 1,
               board: 1,
               grade: 1,
+              chapterCount: { $size: '$chapters' },
+              lessonCount: { $size: '$lessons' },
               mentor: {
                 id: '$mentor._id',
                 staffName: '$mentor.staffName',

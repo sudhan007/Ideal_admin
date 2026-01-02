@@ -7,8 +7,8 @@ export const COURSE_COLLECTION = "courses";
 const courseBase = t.Object({
     courseName: t.String({ default: "10th Grade Math CBSE" }),
     mentor: t.String({ default: "mentorId" }),
-    strikePrice: t.String({ default: "0", pattern: "^[0-9]+(\\.[0-9]{1,2})?$" }),
-    actualPrice: t.String({ default: "0", pattern: "^[0-9]+(\\.[0-9]{1,2})?$" }),
+    strikePrice: t.String(),
+    actualPrice: t.String(),
     board: t.Union([
         t.Literal("CBSE"),
         t.Literal("TN State Board"),
@@ -66,12 +66,12 @@ export const getCoursesSchema = {
     query: t.Object({
         page: t.Optional(t.Number({ default: 1, minimum: 1 })),
         limit: t.Optional(t.Number({ default: 10, minimum: 1, maximum: 100 })),
-        board: t.Optional(t.Union([t.Literal("CBSE"), t.Literal("TN State Board")], { default: "CBSE" })),
-        grade: t.Union([
+        board: t.Optional(t.Union([t.Literal("CBSE"), t.Literal("TN State Board")])),
+        grade: t.Optional(t.Union([
             t.Literal("I"), t.Literal("II"), t.Literal("III"), t.Literal("IV"),
             t.Literal("V"), t.Literal("VI"), t.Literal("VII"), t.Literal("VIII"),
             t.Literal("IX"), t.Literal("X"), t.Literal("XI"), t.Literal("XII"),
-        ], { default: "X" }),
+        ])),
         search: t.Optional(t.String()),
         sortBy: t.Optional(t.Union([t.Literal("courseName"), t.Literal("actualPrice"), t.Literal("createdAt")], { default: "createdAt" })),
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")], { default: "asc" })),

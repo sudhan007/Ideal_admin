@@ -5,10 +5,10 @@ import { courseCreateSchema, courseDeleteSchema, courseNamesQuerySchema, courseS
 export const courseController = new Elysia({
     prefix: '/courses'
 })
-.post('/', createCourse, courseCreateSchema)
-.put('/:courseId', updateCourse, courseUpdateSchema)
-.get('/', getAllCourses, getCoursesSchema)
-.get('/:courseId', getCourseById, getCourseByIdSchema)
-.get('/names', getAllCourseNames, courseNamesQuerySchema)
-.patch('/:courseId', toggeleCourseStatusById, courseStatusToggleSchema)
-.delete('/:courseId', deleteCourseById, courseDeleteSchema);
+    .post('/', createCourse, courseCreateSchema)
+    .put('/:courseId', updateCourse, courseUpdateSchema)
+    .get('/', getAllCourses, getCoursesSchema)
+    .get('/:courseId', getCourseById, getCourseByIdSchema)
+    .get('/names', getAllCourseNames, courseNamesQuerySchema)
+    .patch('/:courseId', toggeleCourseStatusById, courseStatusToggleSchema)
+    .delete('/:courseId', deleteCourseById, courseDeleteSchema);

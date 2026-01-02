@@ -6,52 +6,53 @@ export const STAFFS_COLLECTION = "staffs";
 
 
 const staffBase = t.Object({
-    staffName: t.String({ default: "John Doe" }),
-    phoneNumber: t.String({ default: "1234567890", pattern: "^[0-9]{10}$" }),
-    role: t.String({ default: 'staff' }),
-    isBlocked: t.Boolean({ default: false }),
-    ...baseFields.properties,
-    // permissions: t.Array(t.Object({ moduleName: t.String(), actions: t.Array(t.String()) }), { default: [] }),
+  staffName: t.String({ default: "John Doe" }),
+  phoneNumber: t.String({ default: "1234567890", pattern: "^[0-9]{10}$" }),
+  role: t.String({ default: 'staff' }),
+  isActive: t.Boolean({ default: true }),
+  ...baseFields.properties,
+  // permissions: t.Array(t.Object({ moduleName: t.String(), actions: t.Array(t.String()) }), { default: [] }),
 });
 
 
 const staffCreateModel = t.Object({
-    ...staffBase.properties,
-    image: t.File({
-        type: "image/*",
-    }),
+  ...staffBase.properties,
+  image: t.File({
+    type: "image/*",
+  }),
 });
 
 const staffUpdateModel = t.Object({
-    ...staffBase.properties,
-    image: t.Union([
-        t.File({ type: "image/*" }),
-        t.String({ format: "uri", description: "URL of the profile image" }),
-    ],),
-}, 
-{
-    additionalProperties: false
+  ...staffBase.properties,
+  image: t.Union([
+    t.File({ type: "image/*" }),
+    t.String({ format: "uri", description: "URL of the  image" }),
+  ], {
+    description: "Either upload a new  image or provide a URL"
+  }),
+}, {
+  additionalProperties: false
 });
 
 
 export const staffCreateSchema = {
-    body: staffCreateModel,
-    detail: {
-        summary: "Create a new staff",
-        description: "Requires uploading a profile image",
-        tags: ["Staffs"],
-    },
-    contentTypes: ["multipart/form-data"]
+  body: staffCreateModel,
+  detail: {
+    summary: "Create a new staff",
+    description: "Requires uploading a profile image",
+    tags: ["Staffs"],
+  },
+  contentTypes: ["multipart/form-data"]
 };
 
 export const staffUpdateSchema = {
-    body: staffUpdateModel,
-    detail: {
-        summary: "Update a staff",
-        description: "Partially update staff details. image can be a new file or a URL.",
-        tags: ["Staffs"],
-    },
-    contentTypes: ["multipart/form-data"]
+  body: staffUpdateModel,
+  detail: {
+    summary: "Update a staff",
+    description: "Partially update staff details. image can be a new file or a URL.",
+    tags: ["Staffs"],
+  },
+  contentTypes: ["multipart/form-data"]
 };
 
 export const getStaffsSchema = {
@@ -92,19 +93,19 @@ export const getStaffsDropdownSchema = {
 };
 
 export const staffDeleteSchema = {
-    detail: {
-        summary: "Delete a staff",
-        description: "Delete a staff by its ID",
-        tags: ["Staffs"],
-    }
+  detail: {
+    summary: "Delete a staff",
+    description: "Delete a staff by its ID",
+    tags: ["Staffs"],
+  }
 };
 
 export const staffStatusToggleSchema = {
-    detail: {
-        summary: "Toggle staff block status",
-        description: "Block or unblock a staff by its ID",
-        tags: ["Staffs"],
-    }
+  detail: {
+    summary: "Toggle staff block status",
+    description: "Block or unblock a staff by its ID",
+    tags: ["Staffs"],
+  }
 };
 
 export type StaffCreateInput = typeof staffCreateSchema.body.static;

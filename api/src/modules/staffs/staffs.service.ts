@@ -19,6 +19,8 @@ export const createStaff = async (ctx: Context<{ body: StaffCreateInput }>) => {
       // permissions,
       image: fullUrl ?? fileKey,
       createdAt: new Date(),
+      isDeleted: false,
+      isActive: true
     };
     const result = await staffsCollection.insertOne(staffData);
     set.status = 201;
@@ -96,7 +98,7 @@ export const getAllStaffs = async (ctx: Context<{ query: GetStaffsQuery }>) => {
     const staffsCollection = await getCollection(STAFFS_COLLECTION);
 
     const pipeline: any[] = [
-      { $match: { isDeleted: false } }
+      { $match: { isDeleted: false, isActive: true } }
     ];
 
     if (search) {
