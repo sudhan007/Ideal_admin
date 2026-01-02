@@ -5,7 +5,13 @@ import { _axios } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -23,7 +29,7 @@ function CreateCoursePage() {
 
   const isEditMode = id !== 'new'
   const stateCourse = isEditMode ? (location.state as any)?.course : null
-  console.log(stateCourse,'stateCourse')
+  console.log(stateCourse, 'stateCourse')
   const [formData, setFormData] = useState({
     courseName: '',
     mentor: '',
@@ -75,7 +81,8 @@ function CreateCoursePage() {
       data.append('board', formData.board)
       data.append('grade', formData.grade)
       if (formData.bannerImage) data.append('bannerImage', formData.bannerImage)
-      else if(isEditMode && typeof previewImage === 'string' && previewImage) data.append('bannerImage', previewImage || '')
+      else if (isEditMode && typeof previewImage === 'string' && previewImage)
+        data.append('bannerImage', previewImage || '')
       if (isEditMode) {
         return _axios.put(`/courses/${id}`, data)
       } else {
@@ -83,7 +90,11 @@ function CreateCoursePage() {
       }
     },
     onSuccess: () => {
-      toast.success(isEditMode ? 'Course updated successfully' : 'Course created successfully')
+      toast.success(
+        isEditMode
+          ? 'Course updated successfully'
+          : 'Course created successfully',
+      )
       queryClient.invalidateQueries({ queryKey: ['courses'] })
       goBack()
     },
@@ -97,22 +108,24 @@ function CreateCoursePage() {
 
     if (!formData.courseName.trim()) {
       newErrors.courseName = 'Course name is required'
-    } else if (formData.courseName.length < 3 || formData.courseName.length > 100) {
+    } else if (
+      formData.courseName.length < 3 ||
+      formData.courseName.length > 100
+    ) {
       newErrors.courseName = 'Course name must be between 3 and 100 characters'
     }
-
 
     if (!formData.mentor.trim()) {
       newErrors.mentor = 'please select a mentor'
     }
 
-    if (!formData.strikePrice.trim()) {
+    if (!formData.strikePrice) {
       newErrors.strikePrice = 'Strike price is required'
     } else if (!/^\d+$/.test(formData.strikePrice)) {
       newErrors.strikePrice = 'Strike price must be a valid number'
     }
 
-    if (!formData.actualPrice.trim()) {
+    if (!formData.actualPrice) {
       newErrors.actualPrice = 'Actual price is required'
     } else if (!/^\d+$/.test(formData.actualPrice)) {
       newErrors.actualPrice = 'Actual price must be a valid number'
@@ -134,8 +147,13 @@ function CreateCoursePage() {
       if (file.size > 5 * 1024 * 1024) {
         newErrors.bannerImage = 'Max file size is 5MB'
       }
-      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
-        newErrors.bannerImage = 'Only .jpg, .jpeg, .png and .webp formats are supported'
+      if (
+        !['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
+          file.type,
+        )
+      ) {
+        newErrors.bannerImage =
+          'Only .jpg, .jpeg, .png and .webp formats are supported'
       }
     }
 
@@ -145,23 +163,23 @@ function CreateCoursePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setFormData(prev => ({ ...prev, bannerImage: file }))
+      setFormData((prev) => ({ ...prev, bannerImage: file }))
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreviewImage(reader.result as string)
@@ -169,7 +187,7 @@ function CreateCoursePage() {
       reader.readAsDataURL(file)
     }
     if (errors.bannerImage) {
-      setErrors(prev => ({ ...prev, bannerImage: '' }))
+      setErrors((prev) => ({ ...prev, bannerImage: '' }))
     }
   }
 
@@ -182,127 +200,196 @@ function CreateCoursePage() {
 
   return (
     <div className="mx-auto p-2">
-      <Card className='rounded-xsm border-background'>
+      <Card className="rounded-xsm border-background">
         <CardContent>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+          >
             {/* Course Name */}
             <div className="flex flex-col gap-5">
-              <Label className='text-foreground' htmlFor="courseName">Course Name</Label>
+              <Label className="text-foreground" htmlFor="courseName">
+                Course Name
+              </Label>
               <Input
                 id="courseName"
                 name="courseName"
-                className='text-foreground h-10 rounded-xsm'
+                className="text-foreground h-10 rounded-xsm"
                 value={formData.courseName}
                 onChange={handleInputChange}
                 placeholder="e.g. Complete React Mastery"
               />
-              {errors.courseName && <p className="text-sm text-destructive">{errors.courseName}</p>}
+              {errors.courseName && (
+                <p className="text-sm text-destructive">{errors.courseName}</p>
+              )}
             </div>
 
             {/* Mentor */}
             <div className="flex flex-col gap-5 h-full">
-              <Label className='text-foreground'>Mentor</Label>
+              <Label className="text-foreground">Mentor</Label>
               <Select
                 value={formData.mentor}
                 onValueChange={(value) => handleSelectChange('mentor', value)}
                 disabled={mentorsLoading}
               >
                 <SelectTrigger className="w-full h-10! rounded-xsm text-foreground">
-                  <SelectValue placeholder={mentorsLoading ? 'Loading mentors...' : 'Select a mentor'} />
+                  <SelectValue
+                    placeholder={
+                      mentorsLoading ? 'Loading mentors...' : 'Select a mentor'
+                    }
+                  />
                 </SelectTrigger>
-                <SelectContent className='bg-background'>
+                <SelectContent className="bg-background">
                   {mentors?.map((mentor: any) => (
-                    <SelectItem  className=' hover:text-foreground! cursor-pointer' key={mentor._id} value={mentor._id}>
+                    <SelectItem
+                      className=" hover:text-foreground! cursor-pointer"
+                      key={mentor._id}
+                      value={mentor._id}
+                    >
                       <div className="flex items-center gap-2 text-foreground">
-                        <img src={mentor.image} alt={mentor.staffName} className="h-6 w-6 rounded-full object-cover" />
+                        <img
+                          src={mentor.image}
+                          alt={mentor.staffName}
+                          className="h-6 w-6 rounded-full object-cover"
+                        />
                         <span>{mentor.staffName}</span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.mentor && <p className="text-sm text-destructive">{errors.mentor}</p>}
+              {errors.mentor && (
+                <p className="text-sm text-destructive">{errors.mentor}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-5">
-              <Label className='text-foreground' htmlFor="strikePrice">Strike Price (₹)</Label>
+              <Label className="text-foreground" htmlFor="strikePrice">
+                Strike Price (₹)
+              </Label>
               <Input
                 id="strikePrice"
                 name="strikePrice"
                 type="number"
-                className='text-foreground h-10 rounded-xsm'
+                className="text-foreground h-10 rounded-xsm"
                 value={formData.strikePrice}
                 onChange={handleInputChange}
                 placeholder="2999"
               />
-              {errors.strikePrice && <p className="text-sm text-destructive">{errors.strikePrice}</p>}
+              {errors.strikePrice && (
+                <p className="text-sm text-destructive">{errors.strikePrice}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-5">
-              <Label className='text-foreground' htmlFor="actualPrice">Actual Price (₹)</Label>
+              <Label className="text-foreground" htmlFor="actualPrice">
+                Actual Price (₹)
+              </Label>
               <Input
                 id="actualPrice"
                 name="actualPrice"
                 type="number"
-                className='text-foreground h-10 rounded-xsm'
+                className="text-foreground h-10 rounded-xsm"
                 value={formData.actualPrice}
                 onChange={handleInputChange}
                 placeholder="999"
               />
-              {errors.actualPrice && <p className="text-sm text-destructive">{errors.actualPrice}</p>}
+              {errors.actualPrice && (
+                <p className="text-sm text-destructive">{errors.actualPrice}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-5">
-              <Label className='text-foreground'>Board</Label>
-              <Select value={formData.board} onValueChange={(value) => handleSelectChange('board', value)}>
+              <Label className="text-foreground">Board</Label>
+              <Select
+                value={formData.board}
+                onValueChange={(value) => handleSelectChange('board', value)}
+              >
                 <SelectTrigger className="w-full h-10! rounded-xsm text-foreground">
                   <SelectValue placeholder="Select board" />
                 </SelectTrigger>
-                <SelectContent className='text-foreground'>
+                <SelectContent className="text-foreground">
                   {['CBSE', 'TN State Board'].map((board) => (
-                    <SelectItem className=' hover:text-foreground! cursor-pointer' key={board} value={board}>
+                    <SelectItem
+                      className=" hover:text-foreground! cursor-pointer"
+                      key={board}
+                      value={board}
+                    >
                       {board}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.board && <p className="text-sm text-destructive">{errors.board}</p>}
+              {errors.board && (
+                <p className="text-sm text-destructive">{errors.board}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-5">
-              <Label className='text-foreground'>Grade/Class</Label>
-              <Select value={formData.grade} onValueChange={(value) => handleSelectChange('grade', value)}>
+              <Label className="text-foreground">Grade/Class</Label>
+              <Select
+                value={formData.grade}
+                onValueChange={(value) => handleSelectChange('grade', value)}
+              >
                 <SelectTrigger className="w-full h-10! rounded-xsm text-foreground">
                   <SelectValue placeholder="Select grade" />
                 </SelectTrigger>
-                <SelectContent className='text-foreground'>
-                  {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'].map((g) => (
-                    <SelectItem className=' hover:text-foreground! cursor-pointer' key={g} value={String(g)}>
+                <SelectContent className="text-foreground">
+                  {[
+                    'I',
+                    'II',
+                    'III',
+                    'IV',
+                    'V',
+                    'VI',
+                    'VII',
+                    'VIII',
+                    'IX',
+                    'X',
+                    'XI',
+                    'XII',
+                  ].map((g) => (
+                    <SelectItem
+                      className=" hover:text-foreground! cursor-pointer"
+                      key={g}
+                      value={String(g)}
+                    >
                       {g}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.grade && <p className="text-sm text-destructive">{errors.grade}</p>}
+              {errors.grade && (
+                <p className="text-sm text-destructive">{errors.grade}</p>
+              )}
             </div>
 
             {/* Banner Image Upload */}
             <div className="flex flex-col gap-5 col-span-full">
-              <Label className='text-foreground' htmlFor="banner-image">Banner Image</Label>
+              <Label className="text-foreground" htmlFor="banner-image">
+                Banner Image
+              </Label>
               <div className="grid w-full max-w-full bg-background! items-center gap-1.5">
                 <Label
                   htmlFor="banner-image"
                   className={`flex flex-col items-center justify-center w-full h-64 ${previewImage ? `` : `border-2 border-dashed`} rounded-xsm cursor-pointer`}
                 >
                   {previewImage ? (
-                    <img src={previewImage} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+                    <img
+                      src={previewImage}
+                      alt="Preview"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
                   ) : (
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className="w-10 h-10 mb-3 text-gray-400" />
                       <p className="mb-2 text-sm text-gray-500">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
+                        <span className="font-semibold">Click to upload</span>{' '}
+                        or drag and drop
                       </p>
-                      <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, JPEG up to 5MB
+                      </p>
                     </div>
                   )}
                 </Label>
@@ -314,8 +401,14 @@ function CreateCoursePage() {
                   onChange={handleFileChange}
                 />
               </div>
-              {formData.bannerImage && <p className="text-sm text-foreground mt-2">Selected: {formData.bannerImage.name}</p>}
-              {errors.bannerImage && <p className="text-sm text-destructive">{errors.bannerImage}</p>}
+              {formData.bannerImage && (
+                <p className="text-sm text-foreground mt-2">
+                  Selected: {formData.bannerImage.name}
+                </p>
+              )}
+              {errors.bannerImage && (
+                <p className="text-sm text-destructive">{errors.bannerImage}</p>
+              )}
             </div>
 
             {/* Submit */}
@@ -330,8 +423,10 @@ function CreateCoursePage() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {isEditMode ? 'Updating...' : 'Creating...'}
                   </>
+                ) : isEditMode ? (
+                  'Update Course'
                 ) : (
-                  isEditMode ? 'Update Course' : 'Create Course'
+                  'Create Course'
                 )}
               </Button>
             </div>

@@ -2,22 +2,20 @@ import {
   ChevronLeftCircle,
   Home,
   Library,
+  User,
   Menu,
   MessageCircleQuestionMark,
   Moon,
   Sun,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-// import { Separator } from "./ui/separator";
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
-// import { DynamicBreadcrumb } from "./DynamicBreadcrumb";
 import { Toaster } from '@/components/ui/sonner'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-// Define link type for TypeScript
 interface Link {
   name: string
   href: string
@@ -28,6 +26,7 @@ interface Link {
 const links: Link[] = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Courses', href: '/courses', icon: Library },
+  { name: 'Mentors', href: '/mentors', icon: User },
   {
     name: 'Questions',
     href: '/questions?lessonId=694b64159a673d7d1b495b1c&courseId=694b63969a673d7d1b495b19&chapterId=694b63e79a673d7d1b495b1a&mode=create',
@@ -39,7 +38,6 @@ export default function Layout({ isDarkMode, setIsDarkMode }: any) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Initialize states with safe defaults (no localStorage access during SSR)
   const [isIconMode, setIsIconMode] = useState<boolean>(true)
   const [activeMenu, setActiveMenu] = useState<string>('')
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -47,7 +45,6 @@ export default function Layout({ isDarkMode, setIsDarkMode }: any) {
   // const [isDarkMode, setIsDarkMode] = useState<boolean>(false)
   const [mounted, setMounted] = useState<boolean>(false)
 
-  // Load settings from localStorage after component mounts (client-side only)
   useEffect(() => {
     setMounted(true)
 
