@@ -4,6 +4,8 @@ import { getCollection } from "@lib/config/db.config";
 import { uploadFileToS3 } from "@lib/utils/s3";
 import { ObjectId } from "mongodb";
 import { STAFFS_COLLECTION } from "../staffs/staffs.model";
+import { LESSONS_COLLECTION } from "modules/lessons/lessons.model";
+import { CHAPTERS_COLLECTION } from "modules/chapters/chapters.model";
 
 
 export const createCourse = async (ctx: Context<{ body: CourseCreateInput }>) => {
@@ -135,7 +137,7 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
 
     pipeline.push({
       $lookup: {
-        from: 'chapters', // Replace with your actual chapters collection name
+        from: CHAPTERS_COLLECTION, // Replace with your actual chapters collection name
         let: { courseId: '$_id' },
         pipeline: [
           {
@@ -157,7 +159,7 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
     // Lookup lessons (only active and not deleted)
     pipeline.push({
       $lookup: {
-        from: 'lessons', // Replace with your actual lessons collection name
+        from: LESSONS_COLLECTION, // Replace with your actual lessons collection name
         let: { courseId: '$_id' },
         pipeline: [
           {

@@ -9,14 +9,14 @@ export async function connectDB(): Promise<Db> {
   if (db) return db;
 
   const uri = APP_CONSTANTS.DATABASE_URL;
-  
+
   client = new MongoClient(uri);
   await client.connect();
-  
+
   db = client.db();
-  
+
   console.log(`MongoDB connected 🦬`);
-  
+
   process.on("SIGINT", async () => {
     await client.close();
     console.log("MongoDB connection closed");

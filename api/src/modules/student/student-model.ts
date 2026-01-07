@@ -28,7 +28,7 @@ const studentDetailsCreateModel =
         parentName: t.String(),
         address: t.String(),
         email: t.Optional(t.String({ format: "email" })),
-        isBlocked: t.Boolean({ default: false }),
+        isActive: t.Boolean({ default: true }),
         studentProfile: t.File({ type: "image/*" }),
         ...baseFields.properties,
     })

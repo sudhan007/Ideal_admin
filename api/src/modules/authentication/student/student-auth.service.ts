@@ -138,9 +138,8 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
     }
 }
 export const sendOtp = async (ctx: Context<{ body: OtpSchema }>) => {
-
-    const { body, set } = ctx
-    const { mobile, smsId } = body
+    const { body, set } = ctx;
+    const { mobile, smsId } = body;
 
     const exceptionalNumbers = [
         "9074914469",
@@ -148,24 +147,22 @@ export const sendOtp = async (ctx: Context<{ body: OtpSchema }>) => {
         "+91 9074914469",
     ];
 
-    const otpCollection = await getCollection(OTP_COUNT_COLLECTION);
     try {
-
         if (!mobile || !smsId) {
+            set.status = 400;
             return {
                 message: "Mobile number and SMS ID are required",
                 status: false,
             };
         }
 
-        if (mobile) {
-            if (exceptionalNumbers.includes(mobile)) {
-                return {
-                    message: "OTP sent successfully",
-                    status: true,
-                    otpId: "SEND_000000",
-                };
-            }
+        // Exceptional numbers (no real OTP)
+        if (exceptionalNumbers.includes(mobile)) {
+            return {
+                message: "OTP sent successfully",
+                status: true,
+                otpId: "SEND_000000",
+            };
         }
 
         const response = await axios.post(
@@ -177,43 +174,43 @@ export const sendOtp = async (ctx: Context<{ body: OtpSchema }>) => {
             }
         );
 
-        if (response.data.status) {
-            const now = new Date();
-            const month = now.getMonth() + 1;
-            const year = now.getFullYear();
-
-            let existing = await otpCollection.findOne({
-                month: month,
-                year: year
-            })
-
-            if (existing) {
-                existing.count += 1;
-                await existing.save();
-            } else {
-                const newOtpCount = await otpCollection.insertOne({
-                    month: month,
-                    year: year,
-                    count: 1
-                });
-            }
-
+        if (!response.data?.status) {
+            set.status = 500;
             return {
-                message: "OTP sent successfully",
-                status: true,
-                otpId: response.data.id,
+                message: "Failed to send OTP",
+                status: false,
             };
         }
-    }
-    catch (error: any) {
-        console.log("Send otp error:", error)
-        set.status = 500
+
+        // ===== OTP COUNT LOGIC (FIXED) =====
+        const otpCollection = await getCollection(OTP_COUNT_COLLECTION);
+
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+
+        await otpCollection.updateOne(
+            { month, year },
+            { $inc: { count: 1 } },
+            { upsert: true }
+        );
+        // ==================================
+
         return {
-            message: error.message,
-            status: false
-        }
+            message: "OTP sent successfully",
+            status: true,
+            otpId: response.data.id,
+        };
+    } catch (error: any) {
+        console.error("Send otp error:", error);
+        set.status = 500;
+        return {
+            message: error.message || "Internal Server Error",
+            status: false,
+        };
     }
-}
+};
+
 export const verifyOtp = async ({ body, set }: Context<{ body: verifyOtpSchema }>) => {
     const { otpId, otpNo } = body;
 
