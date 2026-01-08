@@ -1,0 +1,9 @@
+export const RAZORPAY_COLLECTION = "razorpay"
+export const STUDENT_COLLECTION = "students"
+export const COURSE_ENROLLMENT_COLLECTION = "course_enrollments"
+export const OTP_COUNT_COLLECTION = "otp_count"
+export const COURSE_COLLECTION = "courses";
+export const LESSON_COLLECTION = "lessons";
+export const LESSON_PROGRESS_COLLECTION = "lesson_progress";
+export const COURSE_FORECASTING = "course_forecasting";
+export const CHAPTER_COLLECTION = "chapters";

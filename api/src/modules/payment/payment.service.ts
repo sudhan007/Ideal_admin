@@ -5,6 +5,7 @@ import { COURSE_COLLECTION } from "modules/courses/course.model";
 import { ObjectId } from "mongodb";
 import { STUDENT_COLLECTION } from "modules/authentication/student/student-auth.model";
 import { razorPayInstance } from "@lib/utils/razorpay";
+import { enrollStudentInCourse } from "@lib/utils/course-enrollment";
 
 export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchema }>) => {
     const { body, set } = ctx;
@@ -52,9 +53,20 @@ export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchem
             createdBy: new ObjectId(student),
         };
 
-        const result = await razorpayCollection.insertOne(razorPayData);
+        await razorpayCollection.insertOne(razorPayData);
 
         set.status = 200;
+        const paymentId = "12121"
+        const result = await enrollStudentInCourse(student, course, paymentId);
+
+        if (!result.success) {
+            set.status = 400;
+            return {
+                message: result.message,
+                status: false,
+            };
+        }
+
         return {
             message: "Order created successfully",
             status: true,
