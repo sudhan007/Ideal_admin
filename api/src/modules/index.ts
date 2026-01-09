@@ -8,11 +8,13 @@ import { studentProfileController } from "./student/student-controller";
 import { adminAuthController } from "./authentication/admin/admin-auth.controller";
 import { boardController } from "./board/board.controller";
 import { gradeController } from "./grade/grade.controller";
+import { paymentController } from "./payment/payment.controller";
 
 export const baseController = new Elysia({
-    prefix: '/api'
+    prefix: '/api',
 })
     .use(adminAuthController)
+    .use(paymentController)
     .use(gradeController)
     .use(studentAuthController)
     .use(boardController)

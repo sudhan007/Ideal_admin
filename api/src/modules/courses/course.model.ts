@@ -11,7 +11,7 @@ const courseBase = t.Object({
     actualPrice: t.String(),
     board: t.String({ default: "boardId" }),
     grade: t.String({ default: "gradeId" }),
-    courseDurationMinutes: t.Number({ default: 0 }),
+    courseDurationMinutes: t.String({ default: "0" }),
     isActive: t.Boolean({ default: true }),
     ...baseFields.properties
 });

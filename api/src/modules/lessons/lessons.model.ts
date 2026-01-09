@@ -10,6 +10,7 @@ const lessonsModel = t.Object({
     lessonName: t.String(),
     videoUrl: t.String(),
     order: t.Number({ default: 0 }),
+    duration: t.Number({ default: 0 }),
     isActive: t.Optional(t.Boolean({ default: true })),
     ...baseFields.properties
 })

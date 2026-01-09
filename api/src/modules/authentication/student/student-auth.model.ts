@@ -1,17 +1,21 @@
 
+import { baseFields } from "@lib/models/base-model.config";
 import { t } from "elysia";
 
 export const STUDENT_COLLECTION = "students";
 export const OTP_COUNT_COLLECTION = "otp_count";
 
+const loginBase = t.Object({
+    mobileNumber: t.Optional(t.String({ pattern: "^[0-9]{10}$" })),
+    email: t.Optional(t.String({ format: "email" })),
+    loginMethod: t.Union([t.Literal("MOBILE"), t.Literal("EMAIL")], { default: "MOBILE" }),
+    fcmToken: t.Optional(t.String()),
+    isActive: t.Boolean({ default: true }),
+    ...baseFields.properties
+})
 
 export const studentLoginDto = {
-    body: t.Object({
-        mobileNumber: t.Optional(t.String({ pattern: "^[0-9]{10}$" })),
-        email: t.Optional(t.String({ format: "email" })),
-        loginMethod: t.Union([t.Literal("MOBILE"), t.Literal("EMAIL")], { default: "MOBILE" }),
-        fcmToken: t.Optional(t.String()),
-    }),
+    body: loginBase,
     detail: {
         summary: "Login Student",
         description: "Login student with mobile number or email",

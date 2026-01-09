@@ -5,7 +5,7 @@ import { ObjectId } from "mongodb";
 
 export const createLesson = async (ctx: Context<{ body: CreateLessonInput }>) => {
     const { body, set } = ctx;
-    const { courseId, chapterId, lessonName, order, videoUrl } = body
+    const { courseId, chapterId, lessonName, order, videoUrl, duration } = body
 
     try {
         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
@@ -16,8 +16,11 @@ export const createLesson = async (ctx: Context<{ body: CreateLessonInput }>) =>
             lessonName,
             order,
             videoUrl,
+            duration: Number(duration),
             isActive: true,
-            isDeleted: false
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
         }
 
         set.status = 201
@@ -37,7 +40,7 @@ export const createLesson = async (ctx: Context<{ body: CreateLessonInput }>) =>
 export const updateLesson = async (ctx: Context<{ body: UpdateLessonInput, params: { lessonId: string } }>) => {
     const { body, params, set } = ctx;
     const { lessonId } = params;
-    const { courseId, chapterId, lessonName, order, videoUrl } = body
+    const { courseId, chapterId, lessonName, order, videoUrl, duration } = body
 
     try {
         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
@@ -47,6 +50,7 @@ export const updateLesson = async (ctx: Context<{ body: UpdateLessonInput, param
             lessonName,
             order,
             videoUrl,
+            duration: Number(duration),
             isActive: true
         }
 

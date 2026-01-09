@@ -34,20 +34,21 @@ export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchem
             };
         }
 
-        const response: any = await razorPayInstance.orders.create({
-            amount: Number(amount) * 100,
-            currency: "INR",
-        });
-        console.log(JSON.stringify(response), 'response')
-        if (response?.error) {
-            set.status = 400;
-            return { message: "Failed to create order", status: false };
-        }
+        // const response: any = await razorPayInstance.orders.create({
+        //     amount: Number(amount) * 100,
+        //     currency: "INR",
+        // });
+        // console.log(JSON.stringify(response), 'response')
+        // if (response?.error) {
+        //     set.status = 400;
+        //     return { message: "Failed to create order", status: false };
+        // }
 
         const razorPayData = {
             studentId: new ObjectId(student),
             courseId: new ObjectId(course),
-            razorPayOrderId: response?.id,
+            // razorPayOrderId: response?.id,
+            razorPayOrderId: "1212212",
             amount: Number(amount),
             status: "created",
             createdBy: new ObjectId(student),
@@ -70,7 +71,6 @@ export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchem
         return {
             message: "Order created successfully",
             status: true,
-            data: response,
         };
 
     } catch (error: any) {

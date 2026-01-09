@@ -100,7 +100,7 @@ export const enrollStudentInCourse = async (
             studentId: new ObjectId(studentId),
             courseId: new ObjectId(courseId),
             enrolledAt: new Date(),
-            paymentId: paymentId ? new ObjectId(paymentId) : undefined,
+            // paymentId: paymentId ? new ObjectId(paymentId) : undefined,
             status: "active",
             overallProgress: 0,
             completedChapters: [],

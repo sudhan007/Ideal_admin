@@ -7,7 +7,7 @@ import { RoleType } from "@types";
 
 export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) => {
     const { body, set } = ctx;
-    const { email, loginMethod, mobileNumber, fcmToken } = body;
+    const { email, loginMethod, mobileNumber, fcmToken, isActive, isDeleted, createdAt, updatedAt } = body;
 
     try {
         const studentCollection = await getCollection(STUDENT_COLLECTION);
@@ -43,6 +43,8 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 email: "",
                 loginMethod: "MOBILE",
                 fcmToken: fcmToken || "",
+                isActive: true,
+                isDeleted: false,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -104,6 +106,8 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 mobileNumber: mobileNumber || "",
                 loginMethod: "EMAIL",
                 fcmToken: fcmToken || "",
+                isActive: true,
+                isDeleted: false,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };

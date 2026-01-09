@@ -58,7 +58,7 @@ export const createCourse = async (ctx: Context<{ body: CourseCreateInput }>) =>
       grade: grade ? new ObjectId(grade) : null,
       bannerImage: fullUrl ?? fileKey,
       createdAt: new Date(),
-      courseDurationMinutes,
+      courseDurationMinutes: Number(courseDurationMinutes),
       isDeleted: false,
       isActive: true
     };
@@ -99,12 +99,12 @@ export const updateCourse = async (ctx: Context<{ body: CourseUpdateInput, param
     const courseData = {
       courseName,
       mentor: mentor ? new ObjectId(mentor) : null,
-      strikePrice,
-      actualPrice,
+      strikePrice: Number(strikePrice),
+      actualPrice: Number(actualPrice),
       board: board ? new ObjectId(board) : null,
       grade: grade ? new ObjectId(grade) : null,
       bannerImage: bannerUrl,
-      courseDurationMinutes
+      courseDurationMinutes: Number(courseDurationMinutes),
     };
     const result = await courseCollection.updateOne({ _id: new ObjectId(courseId) }, { $set: courseData });
     return {
@@ -268,6 +268,7 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
               createdAt: 1,
               chapterCount: { $size: '$chapters' },
               lessonCount: { $size: '$lessons' },
+              courseDurationMinutes: 1,
               mentor: {
                 id: '$mentor._id',
                 staffName: '$mentor.staffName',

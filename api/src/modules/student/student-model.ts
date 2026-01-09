@@ -6,12 +6,8 @@ export const STUDENTS_COLLECTION = "students";
 
 const educationDetailsSchema =
     t.Object({
-        grade: t.Union([
-            t.Literal("I"), t.Literal("II"), t.Literal("III"), t.Literal("IV"),
-            t.Literal("V"), t.Literal("VI"), t.Literal("VII"), t.Literal("VIII"),
-            t.Literal("IX"), t.Literal("X"), t.Literal("XI"), t.Literal("XII"),
-        ]),
-        nameOfTheBoard: t.Union([t.Literal("CBSE"), t.Literal("TN State Board")]),
+        grade: t.String({ default: "gradeId" }),
+        nameOfTheBoard: t.String({ default: "boardId" }),
         previousYearAnnualTotalMarks: t.String({ pattern: "^[0-9]+(\\.[0-9]{1,2})?$" }),
         previousYearMathMarks: t.String({ pattern: "^[0-9]+(\\.[0-9]{1,2})?$" }),
         referedBy: t.Optional(t.String()),
@@ -28,9 +24,7 @@ const studentDetailsCreateModel =
         parentName: t.String(),
         address: t.String(),
         email: t.Optional(t.String({ format: "email" })),
-        isActive: t.Boolean({ default: true }),
         studentProfile: t.File({ type: "image/*" }),
-        ...baseFields.properties,
     })
 
 
@@ -45,12 +39,8 @@ const studentUpdateModel =
         address: t.Optional(t.String()),
         email: t.Optional(t.String({ format: "email" })),
         registrationComplete: t.Optional(t.Boolean()),
-        grade: t.Optional(t.Union([
-            t.Literal("I"), t.Literal("II"), t.Literal("III"), t.Literal("IV"),
-            t.Literal("V"), t.Literal("VI"), t.Literal("VII"), t.Literal("VIII"),
-            t.Literal("IX"), t.Literal("X"), t.Literal("XI"), t.Literal("XII"),
-        ])),
-        nameOfTheBoard: t.Optional(t.Union([t.Literal("CBSE"), t.Literal("TN State Board")])),
+        grade: t.Optional(t.String({ default: "gradeId" }),),
+        nameOfTheBoard: t.Optional(t.String({ default: "boardId" })),
         previousYearAnnualTotalMarks: t.Optional(t.String({ pattern: "^[0-9]+(\\.[0-9]{1,2})?$" })),
         previousYearMathMarks: t.Optional(t.String({ pattern: "^[0-9]+(\\.[0-9]{1,2})?$" })),
         referedBy: t.Optional(t.Optional(t.String())),
