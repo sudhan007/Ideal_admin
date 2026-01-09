@@ -106,6 +106,7 @@ function RouteComponent() {
     const data = {
       lessonName: formData.get('lessonName') as string,
       order: Number(formData.get('order')),
+      duration: Number(formData.get('duration')),
       videoUrl: formData.get('videoUrl') as string,
     }
     createMutation.mutate(data)
@@ -118,6 +119,7 @@ function RouteComponent() {
     const data = {
       lessonName: formData.get('lessonName') as string,
       order: Number(formData.get('order')),
+      duration: Number(formData.get('duration')),
       videoUrl: formData.get('videoUrl') as string,
     }
     updateMutation.mutate({ lessonId: editingLesson._id, data })
@@ -157,6 +159,10 @@ function RouteComponent() {
                     name="lessonName"
                     required
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="duration">Duration</Label>
+                  <Input id="duration" name="duration" type="number" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="order">Order</Label>
@@ -343,6 +349,17 @@ function RouteComponent() {
                     name="lessonName"
                     defaultValue={editingLesson.lessonName}
                     required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-duration">Duration</Label>
+                  <Input
+                    id="edit-duration"
+                    name="duration"
+                    type="number"
+                    required
+                    defaultValue={editingLesson.duration}
+                    autoFocus={false}
                   />
                 </div>
                 <div className="grid gap-2">

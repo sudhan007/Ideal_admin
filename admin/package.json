@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode localdev  --port 3002 --host --open",
-    "start": "vite --port 3002",
     "build:localdev": "vite build --mode localdev",
     "build:prod": "vite build --mode prod",
+    "build": "vite build",
+    "start": "node .output/server/index.mjs",
     "serve": "vite preview",
     "test": "vitest run",
     "lint": "eslint",

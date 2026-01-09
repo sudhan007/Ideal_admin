@@ -1,5 +1,9 @@
-// src/routes/courses/$id.tsx  (or keep as create.tsx if you prefer)
-import { createFileRoute, useLocation, useRouter } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  useLocation,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { _axios } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
@@ -13,8 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowBigLeft, Loader2, Upload } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/courses/$id/')({
@@ -26,21 +30,41 @@ function CreateCoursePage() {
   const location = useLocation()
   const router = useRouter()
   const queryClient = useQueryClient()
-
+  const navigate = useNavigate()
   const isEditMode = id !== 'new'
   const stateCourse = isEditMode ? (location.state as any)?.course : null
-  console.log(stateCourse, 'stateCourse')
-  const [formData, setFormData] = useState({
-    courseName: '',
-    mentor: '',
-    strikePrice: '',
-    actualPrice: '',
-    board: '',
-    grade: '',
-    bannerImage: null as File | null,
-  })
+
+  // Initialize form data based on mode
+  const getInitialFormData = () => {
+    if (isEditMode && stateCourse) {
+      return {
+        courseName: stateCourse.courseName || '',
+        mentor: stateCourse.mentor?.id || stateCourse.mentor?._id || '',
+        courseDurationMinutes: String(stateCourse.courseDurationMinutes || ''),
+        strikePrice: String(stateCourse.strikePrice || ''),
+        actualPrice: String(stateCourse.actualPrice || ''),
+        board: stateCourse.board?.id || '',
+        grade: stateCourse.grade?.id || '',
+        bannerImage: null as File | null,
+      }
+    }
+    return {
+      courseName: '',
+      mentor: '',
+      courseDurationMinutes: '',
+      strikePrice: '',
+      actualPrice: '',
+      board: '',
+      grade: '',
+      bannerImage: null as File | null,
+    }
+  }
+
+  const [formData, setFormData] = useState(getInitialFormData())
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(
+    isEditMode && stateCourse?.bannerImage ? stateCourse.bannerImage : null,
+  )
 
   const goBack = () => {
     router.history.back()
@@ -54,23 +78,22 @@ function CreateCoursePage() {
       return res.data.staffs || res.data
     },
   })
+  const { data: boards = [], isLoading: boardsLoading } = useQuery({
+    queryKey: ['boards'],
+    queryFn: async () => {
+      const res = await _axios.get('/boards')
+      return res.data.boards || res.data
+    },
+  })
 
-  // Prefill form on edit
-  useEffect(() => {
-    if (isEditMode && stateCourse && mentors.length > 0) {
-      setFormData({
-        courseName: stateCourse.courseName || '',
-        mentor: stateCourse.mentor?.id || '',
-        strikePrice: stateCourse.strikePrice || '',
-        actualPrice: stateCourse.actualPrice || '',
-        board: stateCourse.board || '',
-        grade: stateCourse.grade || '',
-        bannerImage: null,
-      })
-      setPreviewImage(stateCourse.bannerImage || null)
-    }
-  }, [isEditMode, stateCourse, mentors])
-  console.log(formData)
+  const { data: grades = [], isLoading: gradesLoading } = useQuery({
+    queryKey: ['grades'],
+    queryFn: async () => {
+      const res = await _axios.get('/grades')
+      return res.data.grades || res.data
+    },
+  })
+
   const mutation = useMutation({
     mutationFn: async () => {
       const data = new FormData()
@@ -80,9 +103,11 @@ function CreateCoursePage() {
       data.append('actualPrice', formData.actualPrice)
       data.append('board', formData.board)
       data.append('grade', formData.grade)
-      if (formData.bannerImage) data.append('bannerImage', formData.bannerImage)
-      else if (isEditMode && typeof previewImage === 'string' && previewImage)
-        data.append('bannerImage', previewImage || '')
+      data.append('courseDurationMinutes', formData.courseDurationMinutes)
+      if (formData.bannerImage) {
+        data.append('bannerImage', formData.bannerImage)
+      }
+
       if (isEditMode) {
         return _axios.put(`/courses/${id}`, data)
       } else {
@@ -119,13 +144,13 @@ function CreateCoursePage() {
       newErrors.mentor = 'please select a mentor'
     }
 
-    if (!formData.strikePrice) {
+    if (!formData.strikePrice.trim()) {
       newErrors.strikePrice = 'Strike price is required'
     } else if (!/^\d+$/.test(formData.strikePrice)) {
       newErrors.strikePrice = 'Strike price must be a valid number'
     }
 
-    if (!formData.actualPrice) {
+    if (!formData.actualPrice.trim()) {
       newErrors.actualPrice = 'Actual price is required'
     } else if (!/^\d+$/.test(formData.actualPrice)) {
       newErrors.actualPrice = 'Actual price must be a valid number'
@@ -200,6 +225,23 @@ function CreateCoursePage() {
 
   return (
     <div className="mx-auto p-2">
+      <Button
+        onClick={() =>
+          navigate({
+            to: '/courses',
+            search: {
+              page: 1,
+              search: '',
+              sortBy: 'createdAt',
+              sortOrder: 'desc',
+            },
+          })
+        }
+        variant="outline"
+        className="rounded-xsm hover:text-foreground text-foreground  cursor-pointer hover:bg-accent/50 my-2"
+      >
+        <ArrowBigLeft className="mr-2 h-4 w-4" /> Back to Courses
+      </Button>
       <Card className="rounded-xsm border-background">
         <CardContent>
           <form
@@ -223,6 +265,28 @@ function CreateCoursePage() {
                 <p className="text-sm text-destructive">{errors.courseName}</p>
               )}
             </div>
+            <div className="flex flex-col gap-5">
+              <Label
+                className="text-foreground"
+                htmlFor="courseDurationMinutes"
+              >
+                Course Duration(minutes)
+              </Label>
+              <Input
+                id="courseDurationMinutes"
+                type="number"
+                name="courseDurationMinutes"
+                className="text-foreground h-10 rounded-xsm"
+                value={formData.courseDurationMinutes}
+                onChange={handleInputChange}
+                placeholder="e.g. 90"
+              />
+              {errors.courseDurationMinutes && (
+                <p className="text-sm text-destructive">
+                  {errors.courseDurationMinutes}
+                </p>
+              )}
+            </div>
 
             {/* Mentor */}
             <div className="flex flex-col gap-5 h-full">
@@ -242,7 +306,7 @@ function CreateCoursePage() {
                 <SelectContent className="bg-background">
                   {mentors?.map((mentor: any) => (
                     <SelectItem
-                      className=" hover:text-foreground! cursor-pointer"
+                      className="hover:text-foreground! cursor-pointer"
                       key={mentor._id}
                       value={mentor._id}
                     >
@@ -299,23 +363,28 @@ function CreateCoursePage() {
               )}
             </div>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 h-full">
               <Label className="text-foreground">Board</Label>
               <Select
                 value={formData.board}
                 onValueChange={(value) => handleSelectChange('board', value)}
+                disabled={boardsLoading}
               >
                 <SelectTrigger className="w-full h-10! rounded-xsm text-foreground">
-                  <SelectValue placeholder="Select board" />
+                  <SelectValue
+                    placeholder={
+                      boardsLoading ? 'Loading boards...' : 'Select a board'
+                    }
+                  />
                 </SelectTrigger>
-                <SelectContent className="text-foreground">
-                  {['CBSE', 'TN State Board'].map((board) => (
+                <SelectContent className="bg-background">
+                  {boards?.map((board: any) => (
                     <SelectItem
-                      className=" hover:text-foreground! cursor-pointer"
-                      key={board}
-                      value={board}
+                      className="hover:text-foreground! cursor-pointer"
+                      key={board._id}
+                      value={board._id}
                     >
-                      {board}
+                      {board.boardName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -325,42 +394,34 @@ function CreateCoursePage() {
               )}
             </div>
 
-            <div className="flex flex-col gap-5">
-              <Label className="text-foreground">Grade/Class</Label>
+            <div className="flex flex-col gap-5 h-full">
+              <Label className="text-foreground">Grade</Label>
               <Select
                 value={formData.grade}
                 onValueChange={(value) => handleSelectChange('grade', value)}
+                disabled={gradesLoading}
               >
                 <SelectTrigger className="w-full h-10! rounded-xsm text-foreground">
-                  <SelectValue placeholder="Select grade" />
+                  <SelectValue
+                    placeholder={
+                      gradesLoading ? 'Loading grade...' : 'Select a grade'
+                    }
+                  />
                 </SelectTrigger>
-                <SelectContent className="text-foreground">
-                  {[
-                    'I',
-                    'II',
-                    'III',
-                    'IV',
-                    'V',
-                    'VI',
-                    'VII',
-                    'VIII',
-                    'IX',
-                    'X',
-                    'XI',
-                    'XII',
-                  ].map((g) => (
+                <SelectContent className="bg-background">
+                  {grades?.map((grades: any) => (
                     <SelectItem
-                      className=" hover:text-foreground! cursor-pointer"
-                      key={g}
-                      value={String(g)}
+                      className="hover:text-foreground! cursor-pointer"
+                      key={grades._id}
+                      value={grades._id}
                     >
-                      {g}
+                      {grades.grade}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.grade && (
-                <p className="text-sm text-destructive">{errors.grade}</p>
+              {errors.grades && (
+                <p className="text-sm text-destructive">{errors.board}</p>
               )}
             </div>
 

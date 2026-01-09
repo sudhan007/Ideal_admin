@@ -1,9 +1,16 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+  useLocation,
+} from '@tanstack/react-router'
 import appCss from '../styles.css?url'
 import { NotFound } from '@/components/NotFound'
 import Layout from '@/components/Layout'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { _axios } from '@/lib/axios'
 
 export const Route = createRootRoute<{ queryClient: QueryClient }>({
   head: () => ({
@@ -118,16 +125,52 @@ const queryClient = new QueryClient({
 })
 
 function RootDocument() {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [session, setSession] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const navigate = Route.useNavigate()
+  const location = useLocation()
+  const authRoutes = ['/login']
+  const isAuthRoute = authRoutes.includes(location.pathname)
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const res = await _axios.get('/admin-auth/session')
+        console.log(res.data)
+        setSession(res.data.data)
+      } catch (err) {
+        setSession(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSession()
+  }, [location.pathname])
+
+  useEffect(() => {
+    console.log(session, isAuthRoute, loading)
+    if (!loading && !session && !isAuthRoute) {
+      navigate({ to: '/login' })
+    }
+    if (!loading && session && isAuthRoute) {
+      navigate({ to: '/' })
+    }
+  }, [loading, session, isAuthRoute])
+
   return (
     <html lang="en">
       <head>
         <title>Ideal Admin</title>
         <HeadContent />
       </head>
-      <body className={`${isDarkMode ? 'dark ' : ''}`}>
+      <body className={`${isDarkMode ? 'dark' : ''}`}>
         <QueryClientProvider client={queryClient}>
-          <Layout isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+          {location.pathname === '/login' ? (
+            <Outlet />
+          ) : (
+            <Layout isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+          )}
         </QueryClientProvider>
         <Scripts />
       </body>

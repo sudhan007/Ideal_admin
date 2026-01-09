@@ -1,913 +1,9 @@
-// //@ts-nocheck
-// import React, { useState, useRef, useEffect } from 'react'
-// import 'https://esm.run/mathlive'
-// import type { MathfieldElement } from 'mathlive'
-// declare global {
-//   interface Window {
-//     mathVirtualKeyboard: {
-//       show: () => void
-//       hide: () => void
-//     }
-//   }
-// }
-
-// declare global {
-//   namespace JSX {
-//     interface IntrinsicElements {
-//       'math-field': React.DetailedHTMLProps<
-//         React.HTMLAttributes<MathfieldElement> & {
-//           'virtual-keyboard-mode'?: 'auto' | 'manual' | 'onfocus' | 'off'
-//           readonly?: boolean
-//         },
-//         MathfieldElement
-//       >
-//     }
-//   }
-// }
-
-// interface CreateQuestionProps {
-//   courseId?: string
-//   lessonId?: string
-//   chapterId?: string
-// }
-
-// function CreateQuestion({
-//   courseId: propCourseId,
-//   lessonId: propLessonId,
-//   chapterId: propChapterId,
-// }: CreateQuestionProps = {}) {
-//   const [selectedCourse, setSelectedCourse] = useState(propCourseId || '')
-//   const [selectedLesson, setSelectedLesson] = useState(propLessonId || '')
-//   const [questionType, setQuestionType] = useState<
-//     'mcq' | 'fill_blank' | 'math_input'
-//   >('mcq')
-
-//   const [questionData, setQuestionData] = useState({
-//     questionText: '',
-//     questionLatex: '',
-//     type: 'mcq',
-//     options: ['', '', '', ''],
-//     correctAnswer: '',
-//     correctAnswerLatex: '',
-//     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
-//   })
-
-//   useEffect(() => {
-//     if (propCourseId) setSelectedCourse(propCourseId)
-//     if (propLessonId) setSelectedLesson(propLessonId)
-//   }, [propCourseId, propLessonId])
-
-//   const saveQuestion = async () => {
-//     if (!selectedCourse || !selectedLesson || !propChapterId) {
-//       alert('Please select course, lesson, and ensure chapter is provided.')
-//       return
-//     }
-
-//     const payload = {
-//       courseId: selectedCourse,
-//       lessonId: selectedLesson,
-//       chapterId: propChapterId,
-//       type: questionType,
-//       ...questionData,
-//     }
-
-//     try {
-//       const response = await fetch('/api/admin/questions', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(payload),
-//       })
-
-//       if (response.ok) {
-//         alert('Question saved successfully!')
-//       } else {
-//         alert('Failed to save question.')
-//       }
-//     } catch (err) {
-//       alert('Error saving question.')
-//     }
-//   }
-
-//   return (
-//     <div className="admin-container max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-//       <h1 className="text-3xl font-bold mb-8">Create Question</h1>
-
-//       {/* Step 2: Question Type */}
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4"> Question Type</h2>
-//         <div className="flex gap-4 flex-wrap">
-//           <button
-//             onClick={() => setQuestionType('mcq')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'mcq' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Multiple Choice
-//           </button>
-//           <button
-//             onClick={() => setQuestionType('fill_blank')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'fill_blank' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Fill in the Blanks
-//           </button>
-//           <button
-//             onClick={() => setQuestionType('math_input')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'math_input' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Math Formula Input
-//           </button>
-//         </div>
-//       </section>
-
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4">Question Content</h2>
-//         <MathQuestionEditor
-//           type={questionType}
-//           data={questionData}
-//           onChange={setQuestionData}
-//         />
-//       </section>
-
-//       {/* Step 4: Preview */}
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4">Preview</h2>
-//         <QuestionPreview data={questionData} type={questionType} />
-//       </section>
-
-//       <button
-//         onClick={saveQuestion}
-//         className="px-8 py-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
-//       >
-//         Save Question
-//       </button>
-//     </div>
-//   )
-// }
-
-// function MathQuestionEditor({
-//   type,
-//   data,
-//   onChange,
-// }: {
-//   type: string
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   const questionMathRef = useRef<MathfieldElement>(null)
-//   const answerMathRef = useRef<MathfieldElement>(null)
-
-//   // Setup virtual keyboard for each math-field
-//   const setupKeyboard = (mf: MathfieldElement | null) => {
-//     if (mf) {
-//       // Set policy to manual for reliable control
-//       mf.mathVirtualKeyboardPolicy = 'manual'
-
-//       const showKB = () => window.mathVirtualKeyboard?.show()
-//       const hideKB = () => window.mathVirtualKeyboard?.hide()
-
-//       mf.addEventListener('focusin', showKB)
-//       mf.addEventListener('focusout', hideKB)
-
-//       // Cleanup on unmount
-//       return () => {
-//         mf.removeEventListener('focusin', showKB)
-//         mf.removeEventListener('focusout', hideKB)
-//       }
-//     }
-//   }
-
-//   useEffect(() => {
-//     const cleanupQuestion = setupKeyboard(questionMathRef.current)
-//     return cleanupQuestion
-//   }, [])
-
-//   return (
-//     <div className="space-y-8">
-//       {/* Question Text */}
-//       <div>
-//         <label className="block font-medium mb-2">Question Text:</label>
-//         <textarea
-//           value={data.questionText}
-//           onChange={(e) => onChange({ ...data, questionText: e.target.value })}
-//           rows={4}
-//           className="w-full p-4 border rounded-lg"
-//           placeholder="e.g., Find the value of x in the equation..."
-//         />
-//       </div>
-
-//       {/* Question Formula (optional) */}
-//       <div>
-//         <label className="block font-medium mb-2">
-//           Question Formula (optional):
-//         </label>
-//         <div className="border rounded-lg p-4 bg-gray-50">
-//           <math-field
-//             ref={questionMathRef}
-//             className="math-input-field"
-//             onInput={(e: any) =>
-//               onChange({ ...data, questionLatex: e.target.value })
-//             }
-//           >
-//             {data.questionLatex}
-//           </math-field>
-//         </div>
-//         <small className="text-gray-600">
-//           Current LaTeX: {data.questionLatex || 'empty'}
-//         </small>
-//       </div>
-
-//       {/* Type-specific editors */}
-//       {type === 'mcq' && <MCQEditor data={data} onChange={onChange} />}
-//       {type === 'fill_blank' && (
-//         <FillBlankEditor data={data} onChange={onChange} />
-//       )}
-//       {type === 'math_input' && (
-//         <MathInputEditor
-//           data={data}
-//           onChange={onChange}
-//           answerMathRef={answerMathRef}
-//         />
-//       )}
-
-//       {/* Difficulty */}
-//       <div>
-//         <label className="block font-medium mb-2">Difficulty:</label>
-//         <select
-//           value={data.difficulty}
-//           onChange={(e) => onChange({ ...data, difficulty: e.target.value })}
-//           className="w-full p-3 border rounded-lg"
-//         >
-//           <option value="easy">Easy</option>
-//           <option value="medium">Medium</option>
-//           <option value="hard">Hard</option>
-//         </select>
-//       </div>
-//     </div>
-//   )
-// }
-
-// function MathInputEditor({
-//   data,
-//   onChange,
-//   answerMathRef,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-//   answerMathRef: React.RefObject<MathfieldElement>
-// }) {
-//   const insert = (latex: string) => {
-//     answerMathRef.current?.executeCommand(['insert', latex])
-//   }
-
-//   useEffect(() => {
-//     if (answerMathRef.current) {
-//       answerMathRef.current.mathVirtualKeyboardPolicy = 'manual'
-
-//       const showKB = () => window.mathVirtualKeyboard?.show()
-//       const hideKB = () => window.mathVirtualKeyboard?.hide()
-
-//       answerMathRef.current.addEventListener('focusin', showKB)
-//       answerMathRef.current.addEventListener('focusout', hideKB)
-
-//       return () => {
-//         answerMathRef.current?.removeEventListener('focusin', showKB)
-//         answerMathRef.current?.removeEventListener('focusout', hideKB)
-//       }
-//     }
-//   }, [])
-
-//   return (
-//     <div>
-//       <label className="block font-medium mb-2">
-//         Correct Answer (Formula):
-//       </label>
-//       <div className="border rounded-lg p-4 bg-gray-50 mb-4">
-//         <math-field
-//           ref={answerMathRef}
-//           className="math-input-field"
-//           onInput={(e: any) => {
-//             const latex = e.target.value
-//             onChange({
-//               ...data,
-//               correctAnswerLatex: latex,
-//               correctAnswer: latex,
-//             })
-//           }}
-//         >
-//           {data.correctAnswerLatex}
-//         </math-field>
-//       </div>
-
-//       <p className="mb-4">
-//         <strong>Current LaTeX:</strong>{' '}
-//         <code>{data.correctAnswerLatex || 'empty'}</code>
-//       </p>
-//     </div>
-//   )
-// }
-
-// function MCQEditor({
-//   data,
-//   onChange,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   const updateOption = (index: number, value: string) => {
-//     const options = [...data.options]
-//     options[index] = value
-//     onChange({ ...data, options })
-//   }
-
-//   return (
-//     <div>
-//       <label className="block font-medium mb-4">Options:</label>
-//       {data.options.map((opt: string, i: number) => (
-//         <div key={i} className="flex items-center gap-4 mb-4">
-//           <span className="font-bold w-8">{String.fromCharCode(65 + i)}.</span>
-//           <input
-//             type="text"
-//             value={opt}
-//             onChange={(e) => updateOption(i, e.target.value)}
-//             className="flex-1 p-3 border rounded-lg"
-//             placeholder={`Option ${String.fromCharCode(65 + i)}`}
-//           />
-//           <input
-//             type="radio"
-//             name="correct"
-//             checked={data.correctAnswer === opt}
-//             onChange={() => onChange({ ...data, correctAnswer: opt })}
-//           />
-//           <label>Correct</label>
-//         </div>
-//       ))}
-//     </div>
-//   )
-// }
-
-// function FillBlankEditor({
-//   data,
-//   onChange,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   return (
-//     <div>
-//       <label className="block font-medium mb-2">Correct Answer (text):</label>
-//       <input
-//         type="text"
-//         value={data.correctAnswer}
-//         onChange={(e) => onChange({ ...data, correctAnswer: e.target.value })}
-//         className="w-full p-3 border rounded-lg"
-//       />
-//     </div>
-//   )
-// }
-
-// function QuestionPreview({ data, type }: { data: any; type: string }) {
-//   return (
-//     <div className="border-2 border-dashed p-8 rounded-lg bg-gray-50">
-//       <p className="text-lg mb-4">{data.questionText}</p>
-//       {data.questionLatex && (
-//         <div className="my-6">
-//           <math-field readonly>{data.questionLatex}</math-field>
-//         </div>
-//       )}
-
-//       {type === 'mcq' && (
-//         <div className="space-y-3">
-//           {data.options.map((opt: string, i: number) => (
-//             <div
-//               key={i}
-//               className={`p-3 rounded border ${opt === data.correctAnswer ? 'bg-green-100 border-green-500' : 'bg-white'}`}
-//             >
-//               <strong>{String.fromCharCode(65 + i)}.</strong> {opt}
-//             </div>
-//           ))}
-//         </div>
-//       )}
-
-//       {type === 'fill_blank' && (
-//         <p>
-//           <strong>Correct Answer:</strong> {data.correctAnswer}
-//         </p>
-//       )}
-
-//       {type === 'math_input' && (
-//         <div>
-//           <strong>Expected Formula:</strong>
-//           <div className="my-4">
-//             <math-field readonly>{data.correctAnswerLatex}</math-field>
-//           </div>
-//         </div>
-//       )}
-
-//       <p className="mt-6">
-//         <strong>Difficulty:</strong> {data.difficulty}
-//       </p>
-//     </div>
-//   )
-// }
-
-// export default CreateQuestion
-
-//@ts-nocheck
-
-// //@ts-nocheck
-// import React, { useState, useRef, useEffect } from 'react'
-// import 'https://esm.run/mathlive'
-// import type { MathfieldElement } from 'mathlive'
-
-// declare global {
-//   interface Window {
-//     mathVirtualKeyboard: {
-//       show: () => void
-//       hide: () => void
-//     }
-//   }
-// }
-
-// declare global {
-//   namespace JSX {
-//     interface IntrinsicElements {
-//       'math-field': React.DetailedHTMLProps<
-//         React.HTMLAttributes<MathfieldElement> & {
-//           'virtual-keyboard-mode'?: 'auto' | 'manual' | 'onfocus' | 'off'
-//           readonly?: boolean
-//         },
-//         MathfieldElement
-//       >
-//     }
-//   }
-// }
-
-// interface CreateQuestionProps {
-//   courseId?: string
-//   lessonId?: string
-//   chapterId?: string
-// }
-
-// function CreateQuestion({
-//   courseId: propCourseId,
-//   lessonId: propLessonId,
-//   chapterId: propChapterId,
-// }: CreateQuestionProps = {}) {
-//   const [selectedCourse, setSelectedCourse] = useState(propCourseId || '')
-//   const [selectedLesson, setSelectedLesson] = useState(propLessonId || '')
-//   const [questionType, setQuestionType] = useState<
-//     'mcq' | 'fill_blank' | 'math_input'
-//   >('mcq')
-
-//   const [questionData, setQuestionData] = useState({
-//     questionText: '',
-//     questionLatex: '',
-//     type: 'mcq',
-//     options: ['', '', '', ''],
-//     correctAnswer: '',
-//     correctAnswerLatex: '',
-//     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
-//   })
-
-//   useEffect(() => {
-//     if (propCourseId) setSelectedCourse(propCourseId)
-//     if (propLessonId) setSelectedLesson(propLessonId)
-//   }, [propCourseId, propLessonId])
-
-//   const saveQuestion = async () => {
-//     if (!selectedCourse || !selectedLesson || !propChapterId) {
-//       alert('Please select course, lesson, and ensure chapter is provided.')
-//       return
-//     }
-
-//     const payload = {
-//       courseId: selectedCourse,
-//       lessonId: selectedLesson,
-//       chapterId: propChapterId,
-//       type: questionType,
-//       ...questionData,
-//     }
-
-//     try {
-//       const response = await fetch('/api/admin/questions', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(payload),
-//       })
-
-//       if (response.ok) {
-//         alert('Question saved successfully!')
-//       } else {
-//         alert('Failed to save question.')
-//       }
-//     } catch (err) {
-//       alert('Error saving question.')
-//     }
-//   }
-
-//   return (
-//     <div className="admin-container max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-//       <h1 className="text-3xl font-bold mb-8">Create Question</h1>
-
-//       {/* Step 2: Question Type */}
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4"> Question Type</h2>
-//         <div className="flex gap-4 flex-wrap">
-//           <button
-//             onClick={() => setQuestionType('mcq')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'mcq' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Multiple Choice
-//           </button>
-//           <button
-//             onClick={() => setQuestionType('fill_blank')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'fill_blank' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Fill in the Blanks
-//           </button>
-//           <button
-//             onClick={() => setQuestionType('math_input')}
-//             className={`px-6 py-3 rounded-lg font-medium ${questionType === 'math_input' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-//           >
-//             Math Formula Input
-//           </button>
-//         </div>
-//       </section>
-
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4">Question Content</h2>
-//         <MathQuestionEditor
-//           type={questionType}
-//           data={questionData}
-//           onChange={setQuestionData}
-//         />
-//       </section>
-
-//       {/* Step 4: Preview */}
-//       <section className="mb-10">
-//         <h2 className="text-2xl font-semibold mb-4">Preview</h2>
-//         <QuestionPreview data={questionData} type={questionType} />
-//       </section>
-
-//       <button
-//         onClick={saveQuestion}
-//         className="px-8 py-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
-//       >
-//         Save Question
-//       </button>
-//     </div>
-//   )
-// }
-
-// // Symbol Button Component
-// function SymbolButton({
-//   latex,
-//   display,
-//   onClick,
-// }: {
-//   latex: string
-//   display: string
-//   onClick: (latex: string) => void
-// }) {
-//   return (
-//     <button
-//       onClick={() => onClick(latex)}
-//       className="px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-sm font-medium transition-colors"
-//       title={`Insert ${display}`}
-//     >
-//       {display}
-//     </button>
-//   )
-// }
-
-// function MathQuestionEditor({
-//   type,
-//   data,
-//   onChange,
-// }: {
-//   type: string
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   const questionMathRef = useRef<MathfieldElement>(null)
-//   const answerMathRef = useRef<MathfieldElement>(null)
-
-//   // Insert symbol into the active math field
-//   const insertSymbol = (
-//     mathRef: React.RefObject<MathfieldElement>,
-//     latex: string,
-//   ) => {
-//     if (mathRef.current) {
-//       mathRef.current.executeCommand(['insert', latex])
-//       mathRef.current.focus()
-//     }
-//   }
-
-//   // Setup virtual keyboard for each math-field
-//   const setupKeyboard = (mf: MathfieldElement | null) => {
-//     if (mf) {
-//       mf.mathVirtualKeyboardPolicy = 'manual'
-
-//       const showKB = () => window.mathVirtualKeyboard?.show()
-//       const hideKB = () => window.mathVirtualKeyboard?.hide()
-
-//       mf.addEventListener('focusin', showKB)
-//       mf.addEventListener('focusout', hideKB)
-
-//       return () => {
-//         mf.removeEventListener('focusin', showKB)
-//         mf.removeEventListener('focusout', hideKB)
-//       }
-//     }
-//   }
-
-//   useEffect(() => {
-//     const cleanupQuestion = setupKeyboard(questionMathRef.current)
-//     return cleanupQuestion
-//   }, [])
-
-//   return (
-//     <div className="space-y-8">
-//       {/* Question Text */}
-//       <div>
-//         <label className="block font-medium mb-2">Question Text:</label>
-//         <textarea
-//           value={data.questionText}
-//           onChange={(e) => onChange({ ...data, questionText: e.target.value })}
-//           rows={4}
-//           className="w-full p-4 border rounded-lg"
-//           placeholder="e.g., Find the value of x in the equation..."
-//         />
-//       </div>
-
-//       {/* Question Formula (optional) */}
-//       <div>
-//         <label className="block font-medium mb-2">
-//           Question Formula (optional):
-//         </label>
-
-//         {/* Symbol Toolbar for Question */}
-//         <div className="mb-3 p-3 bg-gray-50 rounded-lg border">
-//           <p className="text-xs font-semibold text-gray-600 mb-2">
-//             Quick Insert Symbols:
-//           </p>
-//           <div className="flex flex-wrap gap-2">
-//             <SymbolButton
-//               latex="\hat{i}"
-//               display="î (hat)"
-//               onClick={(l) => insertSymbol(questionMathRef, l)}
-//             />
-//             <SymbolButton
-//               latex="\hat{j}"
-//               display="ĵ (hat)"
-//               onClick={(l) => insertSymbol(questionMathRef, l)}
-//             />
-//             <SymbolButton
-//               latex="\hat{k}"
-//               display="k̂ (hat)"
-//               onClick={(l) => insertSymbol(questionMathRef, l)}
-//             />
-//           </div>
-//         </div>
-
-//         <div className="border rounded-lg p-4 bg-gray-50">
-//           <math-field
-//             ref={questionMathRef}
-//             className="math-input-field"
-//             onInput={(e: any) =>
-//               onChange({ ...data, questionLatex: e.target.value })
-//             }
-//           >
-//             {data.questionLatex}
-//           </math-field>
-//         </div>
-//         <small className="text-gray-600">
-//           Current LaTeX: {data.questionLatex || 'empty'}
-//         </small>
-//       </div>
-
-//       {/* Type-specific editors */}
-//       {type === 'mcq' && <MCQEditor data={data} onChange={onChange} />}
-//       {type === 'fill_blank' && (
-//         <FillBlankEditor data={data} onChange={onChange} />
-//       )}
-//       {type === 'math_input' && (
-//         <MathInputEditor
-//           data={data}
-//           onChange={onChange}
-//           answerMathRef={answerMathRef}
-//           insertSymbol={insertSymbol}
-//         />
-//       )}
-
-//       {/* Difficulty */}
-//       <div>
-//         <label className="block font-medium mb-2">Difficulty:</label>
-//         <select
-//           value={data.difficulty}
-//           onChange={(e) => onChange({ ...data, difficulty: e.target.value })}
-//           className="w-full p-3 border rounded-lg"
-//         >
-//           <option value="easy">Easy</option>
-//           <option value="medium">Medium</option>
-//           <option value="hard">Hard</option>
-//         </select>
-//       </div>
-//     </div>
-//   )
-// }
-
-// function MathInputEditor({
-//   data,
-//   onChange,
-//   answerMathRef,
-//   insertSymbol,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-//   answerMathRef: React.RefObject<MathfieldElement>
-//   insertSymbol: (ref: React.RefObject<MathfieldElement>, latex: string) => void
-// }) {
-//   useEffect(() => {
-//     if (answerMathRef.current) {
-//       answerMathRef.current.mathVirtualKeyboardPolicy = 'manual'
-
-//       const showKB = () => window.mathVirtualKeyboard?.show()
-//       const hideKB = () => window.mathVirtualKeyboard?.hide()
-
-//       answerMathRef.current.addEventListener('focusin', showKB)
-//       answerMathRef.current.addEventListener('focusout', hideKB)
-
-//       return () => {
-//         answerMathRef.current?.removeEventListener('focusin', showKB)
-//         answerMathRef.current?.removeEventListener('focusout', hideKB)
-//       }
-//     }
-//   }, [])
-
-//   return (
-//     <div>
-//       <label className="block font-medium mb-2">
-//         Correct Answer (Formula):
-//       </label>
-
-//       {/* Symbol Toolbar for Answer */}
-//       <div className="mb-3 p-3 bg-gray-50 rounded-lg border">
-//         <p className="text-xs font-semibold text-gray-600 mb-2">
-//           Quick Insert Symbols:
-//         </p>
-//         <div className="flex flex-wrap gap-2">
-//           <SymbolButton
-//             latex="\hat{i}"
-//             display="î (hat)"
-//             onClick={(l) => insertSymbol(questionMathRef, l)}
-//           />
-//           <SymbolButton
-//             latex="\hat{j}"
-//             display="ĵ (hat)"
-//             onClick={(l) => insertSymbol(questionMathRef, l)}
-//           />
-//           <SymbolButton
-//             latex="\hat{k}"
-//             display="k̂ (hat)"
-//             onClick={(l) => insertSymbol(questionMathRef, l)}
-//           />
-//         </div>
-//       </div>
-
-//       <div className="border rounded-lg p-4 bg-gray-50 mb-4">
-//         <math-field
-//           ref={answerMathRef}
-//           className="math-input-field"
-//           onInput={(e: any) => {
-//             const latex = e.target.value
-//             onChange({
-//               ...data,
-//               correctAnswerLatex: latex,
-//               correctAnswer: latex,
-//             })
-//           }}
-//         >
-//           {data.correctAnswerLatex}
-//         </math-field>
-//       </div>
-
-//       <p className="mb-4">
-//         <strong>Current LaTeX:</strong>{' '}
-//         <code>{data.correctAnswerLatex || 'empty'}</code>
-//       </p>
-//     </div>
-//   )
-// }
-
-// function MCQEditor({
-//   data,
-//   onChange,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   const updateOption = (index: number, value: string) => {
-//     const options = [...data.options]
-//     options[index] = value
-//     onChange({ ...data, options })
-//   }
-
-//   return (
-//     <div>
-//       <label className="block font-medium mb-4">Options:</label>
-//       {data.options.map((opt: string, i: number) => (
-//         <div key={i} className="flex items-center gap-4 mb-4">
-//           <span className="font-bold w-8">{String.fromCharCode(65 + i)}.</span>
-//           <input
-//             type="text"
-//             value={opt}
-//             onChange={(e) => updateOption(i, e.target.value)}
-//             className="flex-1 p-3 border rounded-lg"
-//             placeholder={`Option ${String.fromCharCode(65 + i)}`}
-//           />
-//           <input
-//             type="radio"
-//             name="correct"
-//             checked={data.correctAnswer === opt}
-//             onChange={() => onChange({ ...data, correctAnswer: opt })}
-//           />
-//           <label>Correct</label>
-//         </div>
-//       ))}
-//     </div>
-//   )
-// }
-
-// function FillBlankEditor({
-//   data,
-//   onChange,
-// }: {
-//   data: any
-//   onChange: (d: any) => void
-// }) {
-//   return (
-//     <div>
-//       <label className="block font-medium mb-2">Correct Answer (text):</label>
-//       <input
-//         type="text"
-//         value={data.correctAnswer}
-//         onChange={(e) => onChange({ ...data, correctAnswer: e.target.value })}
-//         className="w-full p-3 border rounded-lg"
-//       />
-//     </div>
-//   )
-// }
-
-// function QuestionPreview({ data, type }: { data: any; type: string }) {
-//   return (
-//     <div className="border-2 border-dashed p-8 rounded-lg bg-gray-50">
-//       <p className="text-lg mb-4">{data.questionText}</p>
-//       {data.questionLatex && (
-//         <div className="my-6">
-//           <math-field readonly>{data.questionLatex}</math-field>
-//         </div>
-//       )}
-
-//       {type === 'mcq' && (
-//         <div className="space-y-3">
-//           {data.options.map((opt: string, i: number) => (
-//             <div
-//               key={i}
-//               className={`p-3 rounded border ${opt === data.correctAnswer ? 'bg-green-100 border-green-500' : 'bg-white'}`}
-//             >
-//               <strong>{String.fromCharCode(65 + i)}.</strong> {opt}
-//             </div>
-//           ))}
-//         </div>
-//       )}
-
-//       {type === 'fill_blank' && (
-//         <p>
-//           <strong>Correct Answer:</strong> {data.correctAnswer}
-//         </p>
-//       )}
-
-//       {type === 'math_input' && (
-//         <div>
-//           <strong>Expected Formula:</strong>
-//           <div className="my-4">
-//             <math-field readonly>{data.correctAnswerLatex}</math-field>
-//           </div>
-//         </div>
-//       )}
-
-//       <p className="mt-6">
-//         <strong>Difficulty:</strong> {data.difficulty}
-//       </p>
-//     </div>
-//   )
-// }
-
-// export default CreateQuestion
-
 //@ts-nocheck
 import React, { useState, useRef, useEffect } from 'react'
 import 'https://esm.run/mathlive'
 import type { MathfieldElement } from 'mathlive'
+import { useMutation } from '@tanstack/react-query'
+import { _axios } from '@/lib/axios'
 
 declare global {
   interface Window {
@@ -946,17 +42,23 @@ function CreateQuestion({
   const [selectedCourse, setSelectedCourse] = useState(propCourseId || '')
   const [selectedLesson, setSelectedLesson] = useState(propLessonId || '')
   const [questionType, setQuestionType] = useState<
-    'mcq' | 'fill_blank' | 'math_input'
-  >('mcq')
+    'MCQ' | 'FILL_BLANK' | 'MATH_INPUT'
+  >('MCQ')
 
   const [questionData, setQuestionData] = useState({
     questionText: '',
     questionLatex: '',
-    type: 'mcq',
-    options: ['', '', '', ''],
-    correctAnswer: '',
-    correctAnswerLatex: '',
-    difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    type: 'MCQ',
+    options: [
+      { id: 'A', answer: '' },
+      { id: 'B', answer: '' },
+      { id: 'C', answer: '' },
+      { id: 'D', answer: '' },
+    ],
+    correctAnswer: '', // For MCQ: stores option id (A, B, C, D), For others: stores actual answer
+    correctAnswerLatex: '', // For math_input type
+    difficulty: 'MEDIUM' as 'EASY' | 'MEDIUM' | 'HARD',
+    marks: 1,
   })
 
   useEffect(() => {
@@ -964,61 +66,170 @@ function CreateQuestion({
     if (propLessonId) setSelectedLesson(propLessonId)
   }, [propCourseId, propLessonId])
 
-  const saveQuestion = async () => {
+  // Update question type in data when type changes
+  useEffect(() => {
+    setQuestionData((prev) => ({
+      ...prev,
+      type: questionType,
+      // Reset correct answer when type changes
+      correctAnswer: '',
+      correctAnswerLatex: '',
+    }))
+  }, [questionType])
+
+  const validateQuestion = () => {
     if (!selectedCourse || !selectedLesson || !propChapterId) {
-      alert('Please select course, lesson, and ensure chapter is provided.')
-      return
+      alert('Please ensure course, lesson, and chapter are provided.')
+      return false
     }
 
+    if (!questionData.questionText.trim()) {
+      alert('Please enter question text.')
+      return false
+    }
+
+    if (questionType === 'MCQ') {
+      const hasEmptyOption = questionData.options.some(
+        (opt) => !opt.answer.trim(),
+      )
+      if (hasEmptyOption) {
+        alert('Please fill in all MCQ options.')
+        return false
+      }
+      if (!questionData.correctAnswer) {
+        alert('Please select the correct answer.')
+        return false
+      }
+    } else if (questionType === 'FILL_BLANK') {
+      if (!questionData.correctAnswer.trim()) {
+        alert('Please enter the correct answer.')
+        return false
+      }
+    } else if (questionType === 'MATH_INPUT') {
+      if (!questionData.correctAnswerLatex.trim()) {
+        alert('Please enter the correct formula.')
+        return false
+      }
+    }
+
+    return true
+  }
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data) => {
+      console.log(data, 'ereee')
+      const res = await _axios.post('/question', data)
+      console.log(res)
+      return res.data
+    },
+    onSuccess: (data) => {
+      alert('Question created successfully!')
+      resetForm()
+    },
+    onError: (error: Error) => {
+      alert(error.message || 'Failed to save question')
+    },
+  })
+
+  const saveQuestion = async () => {
+    if (!validateQuestion()) return
+
+    // Build payload according to backend schema
     const payload = {
       courseId: selectedCourse,
       lessonId: selectedLesson,
       chapterId: propChapterId,
       type: questionType,
-      ...questionData,
+      difficulty: questionData.difficulty,
+      marks: questionData.marks,
+      question: {
+        text: questionData.questionText,
+        ...(questionData.questionLatex && {
+          latex: questionData.questionLatex,
+        }),
+      },
+      // For MCQ: include options array, For others: omit options
+      ...(questionType === 'MCQ' && {
+        options: questionData.options.filter((opt) => opt.answer.trim()),
+      }),
+      // correctAnswer handling:
+      // - MCQ: option id (A, B, C, D)
+      // - fill_blank: text answer
+      // - math_input: latex formula
+      correctAnswer:
+        questionType === 'MATH_INPUT'
+          ? questionData.correctAnswerLatex
+          : questionData.correctAnswer,
+      isActive: true,
     }
 
-    try {
-      const response = await fetch('/api/admin/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+    mutate(payload)
 
-      if (response.ok) {
-        alert('Question saved successfully!')
-      } else {
-        alert('Failed to save question.')
-      }
-    } catch (err) {
-      alert('Error saving question.')
-    }
+    // try {
+    //   const response = await fetch('/api/admin/questions', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(payload),
+    //   })
+
+    //   if (response.ok) {
+    //     const result = await response.json()
+    //     alert('Question saved successfully!')
+    //     // Reset form
+    //     resetForm()
+    //   } else {
+    //     const error = await response.json()
+    //     alert(`Failed to save question: ${error.message || 'Unknown error'}`)
+    //   }
+    // } catch (err) {
+    //   console.error('Error saving question:', err)
+    //   alert('Error saving question. Please try again.')
+    // } finally {
+    //   setIsSubmitting(false)
+    // }
+  }
+
+  const resetForm = () => {
+    setQuestionData({
+      questionText: '',
+      questionLatex: '',
+      type: 'MCQ',
+      options: [
+        { id: 'A', answer: '' },
+        { id: 'B', answer: '' },
+        { id: 'C', answer: '' },
+        { id: 'D', answer: '' },
+      ],
+      correctAnswer: '',
+      correctAnswerLatex: '',
+      difficulty: 'MEDIUM',
+      marks: 1,
+    })
+    setQuestionType('MCQ')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50  px-4">
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-5xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r  px-8 py-5 text-white">
-            <h1 className="text-2xl font-bold text-black">
-              Create New Question
-            </h1>
-            <p className="mt-2 text-black">
-              Fill in the details to add a question
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white">
+            <h1 className="text-3xl font-bold">Create New Question</h1>
+            <p className="mt-2 text-blue-100">
+              Fill in the details to add a question to your course
             </p>
           </div>
 
-          <div className="p-4 space-y-10">
+          <div className="p-8 space-y-10">
             {/* Question Type */}
             <section>
               <h2 className="text-2xl font-semibold text-gray-800 mb-5">
                 Question Type
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => setQuestionType('mcq')}
+                  onClick={() => setQuestionType('MCQ')}
                   className={`p-6 rounded-xl font-medium text-lg transition-all duration-200 shadow-md hover:shadow-lg ${
-                    questionType === 'mcq'
+                    questionType === 'MCQ'
                       ? 'bg-blue-600 text-white ring-4 ring-blue-200'
                       : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300'
                   }`}
@@ -1026,25 +237,25 @@ function CreateQuestion({
                   Multiple Choice
                 </button>
                 <button
-                  onClick={() => setQuestionType('fill_blank')}
+                  onClick={() => setQuestionType('FILL_BLANK')}
                   className={`p-6 rounded-xl font-medium text-lg transition-all duration-200 shadow-md hover:shadow-lg ${
-                    questionType === 'fill_blank'
+                    questionType === 'FILL_BLANK'
                       ? 'bg-blue-600 text-white ring-4 ring-blue-200'
                       : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300'
                   }`}
                 >
                   Fill in the Blanks
                 </button>
-                <button
-                  onClick={() => setQuestionType('math_input')}
+                {/* <button
+                  onClick={() => setQuestionType('MATH_INPUT')}
                   className={`p-6 rounded-xl font-medium text-lg transition-all duration-200 shadow-md hover:shadow-lg ${
-                    questionType === 'math_input'
+                    questionType === 'MATH_INPUT'
                       ? 'bg-blue-600 text-white ring-4 ring-blue-200'
                       : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300'
                   }`}
                 >
                   Math Formula Input
-                </button>
+                </button> */}
               </div>
             </section>
 
@@ -1072,13 +283,21 @@ function CreateQuestion({
               </div>
             </section>
 
-            {/* Save Button */}
-            <div className="flex justify-end pt-6">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 pt-6">
+              <button
+                onClick={resetForm}
+                disabled={isPending}
+                className="px-8 py-4 bg-gray-200 text-gray-700 text-lg font-semibold rounded-xl shadow hover:shadow-md hover:bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reset
+              </button>
               <button
                 onClick={saveQuestion}
-                className="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+                disabled={isPending}
+                className="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Save Question
+                {isPending ? 'Saving...' : 'Save Question'}
               </button>
             </div>
           </div>
@@ -1165,7 +384,7 @@ function MathQuestionEditor({
       {/* Question Text */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Question Text
+          Question Text <span className="text-red-500">*</span>
         </label>
         <textarea
           value={data.questionText}
@@ -1225,11 +444,11 @@ function MathQuestionEditor({
       </div>
 
       {/* Type-specific editors */}
-      {type === 'mcq' && <MCQEditor data={data} onChange={onChange} />}
-      {type === 'fill_blank' && (
+      {type === 'MCQ' && <MCQEditor data={data} onChange={onChange} />}
+      {type === 'FILL_BLANK' && (
         <FillBlankEditor data={data} onChange={onChange} />
       )}
-      {type === 'math_input' && (
+      {type === 'MATH_INPUT' && (
         <MathInputEditor
           data={data}
           onChange={onChange}
@@ -1238,20 +457,36 @@ function MathQuestionEditor({
         />
       )}
 
-      {/* Difficulty */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Difficulty Level
-        </label>
-        <select
-          value={data.difficulty}
-          onChange={(e) => onChange({ ...data, difficulty: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-        >
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+      {/* Difficulty & Marks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Difficulty Level
+          </label>
+          <select
+            value={data.difficulty}
+            onChange={(e) => onChange({ ...data, difficulty: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          >
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </div>
+        {/* <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Marks
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={data.marks}
+            onChange={(e) =>
+              onChange({ ...data, marks: parseInt(e.target.value) || 1 })
+            }
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div> */}
       </div>
     </div>
   )
@@ -1288,7 +523,7 @@ function MathInputEditor({
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-2">
-        Correct Answer (Formula)
+        Correct Answer (Formula) <span className="text-red-500">*</span>
       </label>
 
       <div className="mb-4 p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl">
@@ -1323,7 +558,6 @@ function MathInputEditor({
             onChange({
               ...data,
               correctAnswerLatex: latex,
-              correctAnswer: latex,
             })
           }}
         >
@@ -1341,7 +575,6 @@ function MathInputEditor({
   )
 }
 
-// Rest of components (MCQ, FillBlank, Preview) with improved styling
 function MCQEditor({
   data,
   onChange,
@@ -1351,37 +584,41 @@ function MCQEditor({
 }) {
   const updateOption = (index: number, value: string) => {
     const options = [...data.options]
-    options[index] = value
+    options[index].answer = value
     onChange({ ...data, options })
+  }
+
+  const selectCorrectAnswer = (optionId: string) => {
+    onChange({ ...data, correctAnswer: optionId })
   }
 
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-4">
-        Options
+        Options <span className="text-red-500">*</span>
       </label>
       <div className="space-y-4">
-        {data.options.map((opt: string, i: number) => (
+        {data.options.map((opt: any, i: number) => (
           <div
-            key={i}
+            key={opt.id}
             className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
           >
             <span className="font-bold text-lg text-gray-600 w-10">
-              {String.fromCharCode(65 + i)}.
+              {opt.id}.
             </span>
             <input
               type="text"
-              value={opt}
+              value={opt.answer}
               onChange={(e) => updateOption(i, e.target.value)}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder={`Option ${String.fromCharCode(65 + i)}`}
+              placeholder={`Option ${opt.id}`}
             />
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
                 name="correct"
-                checked={data.correctAnswer === opt}
-                onChange={() => onChange({ ...data, correctAnswer: opt })}
+                checked={data.correctAnswer === opt.id}
+                onChange={() => selectCorrectAnswer(opt.id)}
                 className="w-5 h-5 text-blue-600"
               />
               <span className="text-sm font-medium text-gray-700">Correct</span>
@@ -1403,13 +640,14 @@ function FillBlankEditor({
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-2">
-        Correct Answer (Text)
+        Correct Answer (Text) <span className="text-red-500">*</span>
       </label>
       <input
         type="text"
         value={data.correctAnswer}
         onChange={(e) => onChange({ ...data, correctAnswer: e.target.value })}
         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+        placeholder="Enter the correct answer"
       />
     </div>
   )
@@ -1418,11 +656,14 @@ function FillBlankEditor({
 function QuestionPreview({ data, type }: { data: any; type: string }) {
   return (
     <div className="space-y-6">
-      <p className="text-lg text-gray-800 leading-relaxed">
-        {data.questionText || (
-          <em className="text-gray-400">No question text</em>
-        )}
-      </p>
+      <div>
+        <p className="text-sm font-semibold text-gray-500 mb-2">Question:</p>
+        <p className="text-lg text-gray-800 leading-relaxed">
+          {data.questionText || (
+            <em className="text-gray-400">No question text</em>
+          )}
+        </p>
+      </div>
 
       {data.questionLatex && (
         <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
@@ -1432,42 +673,50 @@ function QuestionPreview({ data, type }: { data: any; type: string }) {
         </div>
       )}
 
-      {type === 'mcq' && (
+      {type === 'MCQ' && (
         <div className="space-y-3">
-          {data.options.map((opt: string, i: number) => (
+          <p className="text-sm font-semibold text-gray-500 mb-2">Options:</p>
+          {data.options.map((opt: any) => (
             <div
-              key={i}
+              key={opt.id}
               className={`p-5 rounded-xl border-2 transition-all ${
-                opt === data.correctAnswer
+                opt.id === data.correctAnswer
                   ? 'bg-green-50 border-green-400 shadow-sm'
                   : 'bg-white border-gray-200'
               }`}
             >
-              <strong className="text-lg mr-3">
-                {String.fromCharCode(65 + i)}.
-              </strong>
+              <strong className="text-lg mr-3">{opt.id}.</strong>
               <span className="text-gray-800">
-                {opt || <em>Empty option</em>}
+                {opt.answer || <em className="text-gray-400">Empty option</em>}
               </span>
+              {opt.id === data.correctAnswer && (
+                <span className="ml-3 text-sm text-green-600 font-semibold">
+                  ✓ Correct
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {type === 'fill_blank' && (
-        <p className="text-lg">
-          <strong className="text-gray-700">Correct Answer:</strong>{' '}
-          <span className="text-blue-700 font-medium">
-            {data.correctAnswer || '—'}
-          </span>
-        </p>
+      {type === 'FILL_BLANK' && (
+        <div>
+          <p className="text-sm font-semibold text-gray-500 mb-2">
+            Correct Answer:
+          </p>
+          <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <span className="text-lg text-gray-800 font-medium">
+              {data.correctAnswer || <em className="text-gray-400">—</em>}
+            </span>
+          </div>
+        </div>
       )}
 
-      {type === 'math_input' && (
+      {type === 'MATH_INPUT' && (
         <div>
-          <strong className="text-gray-700 text-lg block mb-3">
+          <p className="text-sm font-semibold text-gray-500 mb-2">
             Expected Formula:
-          </strong>
+          </p>
           <div className="p-6 bg-emerald-50 rounded-xl border-2 border-emerald-200">
             <math-field readonly className="text-xl">
               {data.correctAnswerLatex || '\\phantom{empty}'}
@@ -1476,12 +725,20 @@ function QuestionPreview({ data, type }: { data: any; type: string }) {
         </div>
       )}
 
-      <p className="text-sm text-gray-600 mt-6">
-        <strong>Difficulty:</strong>{' '}
-        <span className="px-3 py-1 bg-gray-200 rounded-full capitalize font-medium">
-          {data.difficulty}
-        </span>
-      </p>
+      <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
+        <p className="text-sm text-gray-600">
+          <strong>Difficulty:</strong>{' '}
+          <span className="px-3 py-1 bg-gray-200 rounded-full capitalize font-medium">
+            {data.difficulty}
+          </span>
+        </p>
+        <p className="text-sm text-gray-600">
+          <strong>Marks:</strong>{' '}
+          <span className="px-3 py-1 bg-gray-200 rounded-full font-medium">
+            {data.marks}
+          </span>
+        </p>
+      </div>
     </div>
   )
 }

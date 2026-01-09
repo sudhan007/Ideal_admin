@@ -16,6 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { DynamicBreadcrumb } from './DynamicBreadcrumb'
 interface Link {
   name: string
   href: string
