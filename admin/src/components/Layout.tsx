@@ -16,7 +16,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { DynamicBreadcrumb } from './DynamicBreadcrumb'
 interface Link {
   name: string
   href: string
@@ -28,9 +27,11 @@ const links: Link[] = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Courses', href: '/courses', icon: Library },
   { name: 'Mentors', href: '/mentors', icon: User },
+  { name: 'Grades', href: '/grades', icon: User },
+  { name: 'Students', href: '/students', icon: User },
   {
     name: 'Questions',
-    href: '/questions?lessonId=694b64159a673d7d1b495b1c&courseId=694b63969a673d7d1b495b19&chapterId=694b63e79a673d7d1b495b1a&mode=create',
+    href: '/questions?&mode=list',
     icon: MessageCircleQuestionMark,
   },
 ]

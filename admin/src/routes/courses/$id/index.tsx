@@ -40,7 +40,7 @@ function CreateCoursePage() {
       return {
         courseName: stateCourse.courseName || '',
         mentor: stateCourse.mentor?.id || stateCourse.mentor?._id || '',
-        courseDurationMinutes: String(stateCourse.courseDurationMinutes || ''),
+
         strikePrice: String(stateCourse.strikePrice || ''),
         actualPrice: String(stateCourse.actualPrice || ''),
         board: stateCourse.board?.id || '',
@@ -51,7 +51,6 @@ function CreateCoursePage() {
     return {
       courseName: '',
       mentor: '',
-      courseDurationMinutes: '',
       strikePrice: '',
       actualPrice: '',
       board: '',
@@ -103,7 +102,6 @@ function CreateCoursePage() {
       data.append('actualPrice', formData.actualPrice)
       data.append('board', formData.board)
       data.append('grade', formData.grade)
-      data.append('courseDurationMinutes', formData.courseDurationMinutes)
       if (formData.bannerImage) {
         data.append('bannerImage', formData.bannerImage)
       }
@@ -263,28 +261,6 @@ function CreateCoursePage() {
               />
               {errors.courseName && (
                 <p className="text-sm text-destructive">{errors.courseName}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-5">
-              <Label
-                className="text-foreground"
-                htmlFor="courseDurationMinutes"
-              >
-                Course Duration(minutes)
-              </Label>
-              <Input
-                id="courseDurationMinutes"
-                type="number"
-                name="courseDurationMinutes"
-                className="text-foreground h-10 rounded-xsm"
-                value={formData.courseDurationMinutes}
-                onChange={handleInputChange}
-                placeholder="e.g. 90"
-              />
-              {errors.courseDurationMinutes && (
-                <p className="text-sm text-destructive">
-                  {errors.courseDurationMinutes}
-                </p>
               )}
             </div>
 

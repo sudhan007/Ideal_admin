@@ -161,7 +161,7 @@ function RouteComponent() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="duration">Duration</Label>
+                  <Label htmlFor="duration">Duration(min)</Label>
                   <Input id="duration" name="duration" type="number" required />
                 </div>
                 <div className="grid gap-2">
@@ -203,7 +203,7 @@ function RouteComponent() {
             <AccordionItem
               key={lesson._id}
               value={lesson._id}
-              className={`mb-2 bg-accent hover:bg-foreground/10 rounded-xsm border-none! overflow-hidden ${
+              className={`mb-2 bg-accent-foreground- hover:bg-foreground/50 rounded-xsm border-none! overflow-hidden ${
                 !lesson.isActive ? 'opacity-60' : ''
               }`}
             >
@@ -352,7 +352,7 @@ function RouteComponent() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-duration">Duration</Label>
+                  <Label htmlFor="edit-duration">Duration(min)</Label>
                   <Input
                     id="edit-duration"
                     name="duration"

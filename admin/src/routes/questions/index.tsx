@@ -5,6 +5,7 @@ import { createFileRoute, useSearch } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/questions/')({
   component: RouteComponent,
+
   validateSearch: (search: {
     lessonId?: string
     courseId?: string
@@ -16,7 +17,7 @@ export const Route = createFileRoute('/questions/')({
 function RouteComponent() {
   const search = useSearch({ from: '/questions/' })
   const { mode, chapterId, courseId, lessonId } = search
-
+  console.log(mode)
   if (!chapterId || !courseId || !lessonId) {
     return null
   }
