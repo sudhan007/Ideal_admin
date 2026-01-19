@@ -34,6 +34,16 @@ const links: Link[] = [
     href: '/questions?&mode=list',
     icon: MessageCircleQuestionMark,
   },
+  {
+    name: 'Task',
+    href: '/tasks?&mode=list',
+    icon: MessageCircleQuestionMark,
+  },
+  {
+    name: 'Notification',
+    href: '/notification?&mode=list',
+    icon: MessageCircleQuestionMark,
+  },
 ]
 
 export default function Layout({ isDarkMode, setIsDarkMode }: any) {

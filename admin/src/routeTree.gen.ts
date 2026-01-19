@@ -11,16 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TasksIndexRouteImport } from './routes/tasks/index'
 import { Route as StudentsIndexRouteImport } from './routes/students/index'
 import { Route as QuestionsIndexRouteImport } from './routes/questions/index'
 import { Route as MentorsIndexRouteImport } from './routes/mentors/index'
 import { Route as GradesIndexRouteImport } from './routes/grades/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
+import { Route as TasksIdRouteImport } from './routes/tasks/$id'
 import { Route as StudentsIdRouteImport } from './routes/students/$id'
 import { Route as MentorsIdRouteImport } from './routes/mentors/$id'
 import { Route as GradesIdRouteImport } from './routes/grades/$id'
 import { Route as CoursesIdIndexRouteImport } from './routes/courses/$id/index'
 import { Route as CoursesIdChaptersRouteRouteImport } from './routes/courses/$id/chapters/route'
+import { Route as TasksSubmissionsIdSubmissionIdRouteImport } from './routes/tasks/submissions/$id/$submissionId'
 import { Route as CoursesIdChaptersChapterIdIndexRouteImport } from './routes/courses/$id/chapters/$chapterId/index'
 
 const LoginRoute = LoginRouteImport.update({
@@ -31,6 +34,11 @@ const LoginRoute = LoginRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksIndexRoute = TasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentsIndexRoute = StudentsIndexRouteImport.update({
@@ -58,6 +66,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksIdRoute = TasksIdRouteImport.update({
+  id: '/tasks/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentsIdRoute = StudentsIdRouteImport.update({
   id: '/students/$id',
   path: '/students/$id',
@@ -83,6 +96,12 @@ const CoursesIdChaptersRouteRoute = CoursesIdChaptersRouteRouteImport.update({
   path: '/courses/$id/chapters',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksSubmissionsIdSubmissionIdRoute =
+  TasksSubmissionsIdSubmissionIdRouteImport.update({
+    id: '/tasks/submissions/$id/$submissionId',
+    path: '/tasks/submissions/$id/$submissionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CoursesIdChaptersChapterIdIndexRoute =
   CoursesIdChaptersChapterIdIndexRouteImport.update({
     id: '/$chapterId/',
@@ -96,13 +115,16 @@ export interface FileRoutesByFullPath {
   '/grades/$id': typeof GradesIdRoute
   '/mentors/$id': typeof MentorsIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/courses': typeof CoursesIndexRoute
   '/grades': typeof GradesIndexRoute
   '/mentors': typeof MentorsIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/students': typeof StudentsIndexRoute
+  '/tasks': typeof TasksIndexRoute
   '/courses/$id/chapters': typeof CoursesIdChaptersRouteRouteWithChildren
   '/courses/$id': typeof CoursesIdIndexRoute
+  '/tasks/submissions/$id/$submissionId': typeof TasksSubmissionsIdSubmissionIdRoute
   '/courses/$id/chapters/$chapterId': typeof CoursesIdChaptersChapterIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -111,13 +133,16 @@ export interface FileRoutesByTo {
   '/grades/$id': typeof GradesIdRoute
   '/mentors/$id': typeof MentorsIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/courses': typeof CoursesIndexRoute
   '/grades': typeof GradesIndexRoute
   '/mentors': typeof MentorsIndexRoute
   '/questions': typeof QuestionsIndexRoute
   '/students': typeof StudentsIndexRoute
+  '/tasks': typeof TasksIndexRoute
   '/courses/$id/chapters': typeof CoursesIdChaptersRouteRouteWithChildren
   '/courses/$id': typeof CoursesIdIndexRoute
+  '/tasks/submissions/$id/$submissionId': typeof TasksSubmissionsIdSubmissionIdRoute
   '/courses/$id/chapters/$chapterId': typeof CoursesIdChaptersChapterIdIndexRoute
 }
 export interface FileRoutesById {
@@ -127,13 +152,16 @@ export interface FileRoutesById {
   '/grades/$id': typeof GradesIdRoute
   '/mentors/$id': typeof MentorsIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/courses/': typeof CoursesIndexRoute
   '/grades/': typeof GradesIndexRoute
   '/mentors/': typeof MentorsIndexRoute
   '/questions/': typeof QuestionsIndexRoute
   '/students/': typeof StudentsIndexRoute
+  '/tasks/': typeof TasksIndexRoute
   '/courses/$id/chapters': typeof CoursesIdChaptersRouteRouteWithChildren
   '/courses/$id/': typeof CoursesIdIndexRoute
+  '/tasks/submissions/$id/$submissionId': typeof TasksSubmissionsIdSubmissionIdRoute
   '/courses/$id/chapters/$chapterId/': typeof CoursesIdChaptersChapterIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -144,13 +172,16 @@ export interface FileRouteTypes {
     | '/grades/$id'
     | '/mentors/$id'
     | '/students/$id'
+    | '/tasks/$id'
     | '/courses'
     | '/grades'
     | '/mentors'
     | '/questions'
     | '/students'
+    | '/tasks'
     | '/courses/$id/chapters'
     | '/courses/$id'
+    | '/tasks/submissions/$id/$submissionId'
     | '/courses/$id/chapters/$chapterId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -159,13 +190,16 @@ export interface FileRouteTypes {
     | '/grades/$id'
     | '/mentors/$id'
     | '/students/$id'
+    | '/tasks/$id'
     | '/courses'
     | '/grades'
     | '/mentors'
     | '/questions'
     | '/students'
+    | '/tasks'
     | '/courses/$id/chapters'
     | '/courses/$id'
+    | '/tasks/submissions/$id/$submissionId'
     | '/courses/$id/chapters/$chapterId'
   id:
     | '__root__'
@@ -174,13 +208,16 @@ export interface FileRouteTypes {
     | '/grades/$id'
     | '/mentors/$id'
     | '/students/$id'
+    | '/tasks/$id'
     | '/courses/'
     | '/grades/'
     | '/mentors/'
     | '/questions/'
     | '/students/'
+    | '/tasks/'
     | '/courses/$id/chapters'
     | '/courses/$id/'
+    | '/tasks/submissions/$id/$submissionId'
     | '/courses/$id/chapters/$chapterId/'
   fileRoutesById: FileRoutesById
 }
@@ -190,13 +227,16 @@ export interface RootRouteChildren {
   GradesIdRoute: typeof GradesIdRoute
   MentorsIdRoute: typeof MentorsIdRoute
   StudentsIdRoute: typeof StudentsIdRoute
+  TasksIdRoute: typeof TasksIdRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   GradesIndexRoute: typeof GradesIndexRoute
   MentorsIndexRoute: typeof MentorsIndexRoute
   QuestionsIndexRoute: typeof QuestionsIndexRoute
   StudentsIndexRoute: typeof StudentsIndexRoute
+  TasksIndexRoute: typeof TasksIndexRoute
   CoursesIdChaptersRouteRoute: typeof CoursesIdChaptersRouteRouteWithChildren
   CoursesIdIndexRoute: typeof CoursesIdIndexRoute
+  TasksSubmissionsIdSubmissionIdRoute: typeof TasksSubmissionsIdSubmissionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -213,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks/': {
+      id: '/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/students/': {
@@ -250,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks/$id': {
+      id: '/tasks/$id'
+      path: '/tasks/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof TasksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/students/$id': {
       id: '/students/$id'
       path: '/students/$id'
@@ -285,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIdChaptersRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks/submissions/$id/$submissionId': {
+      id: '/tasks/submissions/$id/$submissionId'
+      path: '/tasks/submissions/$id/$submissionId'
+      fullPath: '/tasks/submissions/$id/$submissionId'
+      preLoaderRoute: typeof TasksSubmissionsIdSubmissionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/courses/$id/chapters/$chapterId/': {
       id: '/courses/$id/chapters/$chapterId/'
       path: '/$chapterId'
@@ -315,13 +376,16 @@ const rootRouteChildren: RootRouteChildren = {
   GradesIdRoute: GradesIdRoute,
   MentorsIdRoute: MentorsIdRoute,
   StudentsIdRoute: StudentsIdRoute,
+  TasksIdRoute: TasksIdRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   GradesIndexRoute: GradesIndexRoute,
   MentorsIndexRoute: MentorsIndexRoute,
   QuestionsIndexRoute: QuestionsIndexRoute,
   StudentsIndexRoute: StudentsIndexRoute,
+  TasksIndexRoute: TasksIndexRoute,
   CoursesIdChaptersRouteRoute: CoursesIdChaptersRouteRouteWithChildren,
   CoursesIdIndexRoute: CoursesIdIndexRoute,
+  TasksSubmissionsIdSubmissionIdRoute: TasksSubmissionsIdSubmissionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

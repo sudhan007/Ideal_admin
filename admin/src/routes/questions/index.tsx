@@ -18,9 +18,9 @@ function RouteComponent() {
   const search = useSearch({ from: '/questions/' })
   const { mode, chapterId, courseId, lessonId } = search
   console.log(mode)
-  if (!chapterId || !courseId || !lessonId) {
-    return null
-  }
+  // if (!chapterId || !courseId || !lessonId) {
+  //   return null
+  // }
 
   if (mode === 'create') {
     return (

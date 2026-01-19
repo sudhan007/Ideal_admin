@@ -203,9 +203,7 @@ function RouteComponent() {
             <AccordionItem
               key={lesson._id}
               value={lesson._id}
-              className={`mb-2 bg-accent-foreground- hover:bg-foreground/50 rounded-xsm border-none! overflow-hidden ${
-                !lesson.isActive ? 'opacity-60' : ''
-              }`}
+              className={`mb-2 bg-accent hover:bg-foreground/50 rounded-xsm border-none! overflow-hidden`}
             >
               <AccordionTrigger
                 className={`px-4 py-3 hover:no-underline hover:bg-accent/50 border-none! transition-colors cursor-pointer ${
@@ -227,6 +225,25 @@ function RouteComponent() {
                     className="flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigate({
+                          to: '/tasks',
+                          search: {
+                            lessonId: lesson._id,
+                            courseId,
+                            chapterId,
+                            mode: 'create',
+                          },
+                        })
+                      }}
+                      className="gap-1.5"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      Add Tasks
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
