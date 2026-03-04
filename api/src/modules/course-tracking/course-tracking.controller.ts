@@ -1,8 +1,14 @@
 import Elysia from "elysia";
-import { getCourseProgress, getEnrollmentDetails, updateLessonProgress } from "./course-tracking.service";
-import { updateLessonProgressDto } from "./course-traking.model";
+import { updateVideoProgressDto } from "./course-traking.model";
+import { updateVideoProgress } from "./course-tracking.service";
+import { studentOnly } from "@lib/utils/roles-guard";
 
-export const enrollmentRoutes = new Elysia({ prefix: "/course-tracking" })
-    .patch("/progress", updateLessonProgress, updateLessonProgressDto)
-    .get("/progress/:enrollmentId", getCourseProgress)
-    .get("/:studentId/:courseId", getEnrollmentDetails);
+export const courseTrackingController = new Elysia({
+    prefix: "/course-tracking", detail: {
+        tags: ["Course Tracking"]
+    }
+})
+    .patch("/update-video", updateVideoProgress, { ...updateVideoProgressDto, beforeHandle: studentOnly })
+// .patch("/update-quiz", updateQuizProgress, updateLessonProgressDto)
+
+// .get("/:studentId/:courseId", getEnrollmentDetails);

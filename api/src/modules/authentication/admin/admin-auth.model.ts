@@ -1,7 +1,6 @@
 import { t } from "elysia";
 import { baseFields } from "@lib/models/base-model.config";
 
-export const ADMIN_COLLECTION = "admins";
 
 
 const adminModel = t.Object({

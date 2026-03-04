@@ -2,8 +2,6 @@
 import { baseFields } from "@lib/models/base-model.config";
 import { t } from "elysia";
 
-export const STUDENT_COLLECTION = "students";
-export const OTP_COUNT_COLLECTION = "otp_count";
 
 const loginBase = t.Object({
     mobileNumber: t.Optional(t.String({ pattern: "^[0-9]{10}$" })),

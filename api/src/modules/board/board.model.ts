@@ -1,10 +1,9 @@
 import { baseFields } from "@lib/models/base-model.config";
 import { t } from "elysia";
 
-export const BOARD_COLLECTION = "boards";
 
 const boardBase = t.Object({
-    boardName: t.Union([t.Literal("CBSE"), t.Literal("TN State Board")]),
+    boardName: t.String(),
     isActive: t.Boolean({ default: true }),
     ...baseFields.properties,
 });
@@ -33,9 +32,9 @@ export const boardUpdateDto = {
 
 export const getBoardDto = {
     query: t.Object({
-        search: t.Optional(t.String({ minLength: 1 })),
-        page: t.Optional(t.Number({ minimum: 1, default: 1 })),
-        limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+        search: t.Optional(t.String()),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
     }),
     detail: {
         description: "Get a Board",

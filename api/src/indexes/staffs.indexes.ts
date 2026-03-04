@@ -1,6 +1,6 @@
-import { getCollection } from "../lib/config/db.config";
+import { getCollection } from "@lib/config/db.config";
+import { STAFFS_COLLECTION } from "@lib/Db_collections";
 
-const STAFFS_COLLECTION = "staffs";
 
 export const createStaffIndexes = async () => {
     try {

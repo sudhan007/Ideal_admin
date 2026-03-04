@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ideal-coaching-1cfc5",
+  "private_key_id": "9511a97f3bc1764ed68268051092510c3fc4de44",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCvoHpDzS1Mjn6s\nPp+St7jcE2ndc55QnCtfTYGRwZl2Aqn0klqLgXy5ug7fTqTx5t+PbbbAwjhGPmep\nUy7mVatoK7YfM9fr3HB9Sj9CUZweUxPsBsbeM8cGuOIrt7V5h5VUH+Kdr3hzjkbu\nNVHE/tKtb8b3mB549sKp7TiG1x9AeES9TDgK9gsJtgo/eIr8HqmmkF/66REGMDBR\nyL6bC5+y9JJzd0dU/7yCiA7+andVi8cX97YbqtQ1L48yJiDeSUMhllXz5oOH98L4\nITOtznN97uTu9dw5GaGs6mICffGCxTovYsFoiK3zR64G25rkXTmzFfl70Uws7U5x\nV4iG82ShAgMBAAECggEAAgFaHVz8lIxSIgdshRgL2FfF5zax3ZqCNxo7KEsujwMD\nMQT8m5gWG3JGXMfIzm9xXnGVSxCPTy5Y+r1VsqD9iNN/8WMDMaubOAkBctFxpS8p\nEfJhXKnjbr5CFyzyWYxXY4X3gs9SjSI4STHAE2NeoTGT/bbQTpdbBruWoBkudOBY\nePus0wdcW5rHH5+UQuh+F8/8IIxEyrSQaOEfw4ytH1fZlZq0Dx/kG71UW18qu89d\npZOS+h0VZ92iDZOCeANsuGXi7ty3ekR1duV6Egifa5kGgLSHI0LmnzTGpbAy8imh\nW6Iu1J9bmxMkEwf/6ffs9x+5qXKncla1IhsHs9SNuQKBgQDpVJ8OtEgSm7k9P1g8\n9q73/07tBPXUvw8XCut3Hu7t4wXyq3DthBqkPajYfzjE+K8uX0j8P4rRMX8lb0wi\nQGXIyekvXYMXTWLeClFr8fBtewQJz0ZJAX7EVWmyC3/YTESmRH+5kqVqezzHLXV7\nfKp/eMcMb2rfQpQgolfsT2avuQKBgQDAsKejt3ZuINK+H7dt/7RfZjL5A9AUyXdq\nEC+i+BO9preN9uGeHLCdZ+q9jFfSC2emz3/+vt4w9dlLe97IdI7TKsfD2H4/ddTj\nx/T/DX6s4wxZPd3mR7a6zxAutyt/HCl5f7TCBou7oWksjYKYArrjuHCcnwtGN2Yz\n/N8IW6tAKQKBgHVQpbRn8oDgqQ9hZQUp5qksRcuoHc38ziKAzAkVlX4oEhqEFoBl\nVlvT4KwRs0Jd4v6GzBSAAlTR9SKmRfpGtKZy1nqJIts5foczWuLSP1dcbZhdDfKw\n/MLMSxtI6tue5TlP4YQ1dlQGaHWgppwS/0qeOD5JWsusFvwdg+V9upyJAoGAXnD2\n6TYNVLK/t7Gh3Mb8J9nWV9g3j0ijP5fJUU3Xlxd0VZ9QO4eCRNPe6KI1lNxEJC0F\nZd0017hXlTiUG5mNOxB3spSUZBQjkLS7bpq1oJTzw3WgIbK6a9r66nqaVgV+im8+\nL+63Y/Ibs1t0S37jDKOkhg8pnnOeoxJoWhdb2ukCgYAVCcyFVqu9OQjMlO5SQ1V4\nDLC1lLfYgQkpO0XFe/KO1kRtSpFQslCf4mWnEdDXUodPhjrZmcDoYrth6AmI2OoA\nXf9znzU7zgkqbQMs6se//5gBbsD3XYWagCxWdU6KZJaSV+9YPLcN4wGsAVgFqA8K\nqmoFisKFQmQIhm3EPtdWLg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@ideal-coaching-1cfc5.iam.gserviceaccount.com",
+  "client_id": "115136466676796227015",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40ideal-coaching-1cfc5.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

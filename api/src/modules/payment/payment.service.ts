@@ -1,15 +1,18 @@
 import { Context } from "elysia";
-import { createPaymentSchema, RAZORPAY_COLLECTION } from "./payment.model";
+import { createPaymentSchema } from "./payment.model";
 import { getCollection } from "@lib/config/db.config";
-import { COURSE_COLLECTION } from "modules/courses/course.model";
 import { ObjectId } from "mongodb";
-import { STUDENT_COLLECTION } from "modules/authentication/student/student-auth.model";
-import { razorPayInstance } from "@lib/utils/razorpay";
 import { enrollStudentInCourse } from "@lib/utils/course-enrollment";
+import { StoreType, StudentType } from "@types";
+import { COURSE_COLLECTION, RAZORPAY_COLLECTION, STUDENT_COLLECTION } from "@lib/Db_collections";
 
 export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchema }>) => {
-    const { body, set } = ctx;
-    const { amount, course, student } = body
+    const { body, set, store } = ctx;
+    const { amount, course } = body
+    const { id: student, role } = store as StoreType
+
+
+
     try {
         const courseCollection = await getCollection(COURSE_COLLECTION);
         const studentCollection = await getCollection(STUDENT_COLLECTION);
@@ -25,7 +28,6 @@ export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchem
         }
 
         let studentExist = await studentCollection.findOne({ _id: new ObjectId(student), isDeleted: false, isActive: true });
-
         if (!studentExist) {
             set.status = 404;
             return {
@@ -58,7 +60,16 @@ export const createPaymentOrder = async (ctx: Context<{ body: createPaymentSchem
 
         set.status = 200;
         const paymentId = "12121"
-        const result = await enrollStudentInCourse(student, course, paymentId);
+        const result = await enrollStudentInCourse({
+            studentId: student,
+            courseId: course,
+            enrollmentType: StudentType.ONLINE,
+            enrolledBy: role,
+            paymentId,
+            batchId: null,
+            enrolledById: student
+        });
+
 
         if (!result.success) {
             set.status = 400;

@@ -14,7 +14,7 @@ export const roleGuard = async (
 
   let token: string | undefined;
   if (allowedRoles.includes(RoleType.ADMIN)) {
-    token = cookie.realestateadmin?.value;
+    token = cookie.ideal_access_token_admin?.value;
   }
 
   if (!token && allowedRoles.includes(RoleType.STUDENT)) {
@@ -46,6 +46,7 @@ export const roleGuard = async (
     }
 
     if (!allowedRoles.includes(payload.role)) {
+      console.log(payload.role)
       set.status = 403;
       return { error: "Forbidden: Insufficient role" };
     }

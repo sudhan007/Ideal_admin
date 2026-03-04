@@ -1,7 +1,6 @@
 import { t } from "elysia";
 import { baseFields } from "@lib/models/base-model.config";
 
-export const LESSONS_COLLECTION = "lessons";
 
 
 const lessonsModel = t.Object({
@@ -11,7 +10,10 @@ const lessonsModel = t.Object({
     videoUrl: t.String(),
     order: t.Number({ default: 0 }),
     duration: t.Number({ default: 0 }),
+    accurateSeconds: t.Number({ default: 0 }),
     isActive: t.Optional(t.Boolean({ default: true })),
+    preQuizAttempt: t.Number({ default: 0 }),
+    postQuizAttempt: t.Number({ default: 0 }),
     ...baseFields.properties
 })
 

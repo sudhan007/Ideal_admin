@@ -1,14 +1,14 @@
 import { baseFields } from "@lib/models/base-model.config";
 import { t } from "elysia";
 
-export const GRADE_COLLECTION = "grades";
 
 const gradeBase = t.Object({
-    grade: t.Union([
-        t.Literal("I"), t.Literal("II"), t.Literal("III"), t.Literal("IV"),
-        t.Literal("V"), t.Literal("VI"), t.Literal("VII"), t.Literal("VIII"),
-        t.Literal("IX"), t.Literal("X"), t.Literal("XI"), t.Literal("XII"),
-    ], { default: "X" }),
+    // grade: t.Union([
+    //     t.Literal("I"), t.Literal("II"), t.Literal("III"), t.Literal("IV"),
+    //     t.Literal("V"), t.Literal("VI"), t.Literal("VII"), t.Literal("VIII"),
+    //     t.Literal("IX"), t.Literal("X"), t.Literal("XI"), t.Literal("XII"),
+    // ], { default: "X" }),
+    grade: t.String(),
     isActive: t.Boolean({ default: true }),
     ...baseFields.properties,
 });
@@ -37,9 +37,9 @@ export const gradeUpdateDto = {
 
 export const getGradeDto = {
     query: t.Object({
-        search: t.Optional(t.String({ minLength: 1 })),
-        page: t.Optional(t.Number({ minimum: 1, default: 1 })),
-        limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+        search: t.Optional(t.String()),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
     }),
     detail: {
         description: "Get a Grade",
@@ -47,7 +47,19 @@ export const getGradeDto = {
     }
 }
 
+export const GradeDeleteSchemaDto = {
+    params: t.Object({
+        gradeId: t.String(),
+    }),
+    detail: {
+        summary: "Delete a Grade",
+        description: "Soft delete a Grade by its ID",
+    }
+};
+
+
 
 export type CreateGradeSchema = typeof gradeCreateDto.body.static
 export type UpdateGradeSchema = typeof gradeUpdateDto.body.static
 export type GetGradeSchema = typeof getGradeDto.query.static
+export type GradeDeleteSchema = typeof GradeDeleteSchemaDto.params.static

@@ -13,6 +13,12 @@ export const swaggerConfig = () => {
           },
           {
             url: "https://ideal-admin.onrender.com"
+          },
+          {
+            url: "http://13.201.119.4"
+          },
+          {
+            url: "https://api.indiancrackers.shop"
           }
         ],
         info: {
