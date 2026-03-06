@@ -1,56 +1,27 @@
 import { Context } from "elysia";
-import { UpdateLessonProgressSchema } from "./course-traking.model";
-import { getChapterProgress, getStudentCourseEnrollment, updateQuizProgress, updateVideoProgress } from "@lib/utils/course-tracking";
+import { UpdateVideoProgressSchema } from "./course-traking.model";
+import { updateQuizProgressFN, updateVideoProgressFN } from "@lib/utils/course-tracking";
+import { StoreType } from "@types";
 
 /**
  * Update lesson progress (video or quiz)
  */
-export const updateLessonProgress = async (
-    ctx: Context<{ body: UpdateLessonProgressSchema }>
+export const updateVideoProgress = async (
+    ctx: Context<{ body: UpdateVideoProgressSchema }>
 ) => {
-    const { body, set } = ctx;
-    const { enrollmentId, lessonId, videoProgress, quizProgress } = body;
-
+    const { body, set, store } = ctx;
+    const { id } = store as StoreType
+    const { enrollmentId, lessonId, watchedSeconds } = body; // Assuming schema has these fields
+    console.log(body, id)
     try {
-        let result;
+        const result = await updateVideoProgressFN(enrollmentId, lessonId, watchedSeconds, id);
 
-        // Update video progress if provided
-        if (videoProgress) {
-            result = await updateVideoProgress(
-                enrollmentId,
-                lessonId,
-                videoProgress.watchedDuration,
-                videoProgress.totalDuration,
-                videoProgress.lastWatchedPosition
-            );
-
-            if (!result.success) {
-                set.status = 400;
-                return {
-                    message: result.message,
-                    status: false,
-                };
-            }
-        }
-
-        // Update quiz progress if provided
-        if (quizProgress) {
-            result = await updateQuizProgress(
-                enrollmentId,
-                lessonId,
-                quizProgress.passed,
-                quizProgress.score,
-                quizProgress.totalQuestions,
-                quizProgress.correctAnswers
-            );
-
-            if (!result.success) {
-                set.status = 400;
-                return {
-                    message: result.message,
-                    status: false,
-                };
-            }
+        if (!result.success) {
+            set.status = 400;
+            return {
+                status: false,
+                message: result.message
+            };
         }
 
         set.status = 200;
@@ -68,68 +39,96 @@ export const updateLessonProgress = async (
     }
 };
 
-/**
- * Get student's course progress
- */
-export const getCourseProgress = async (
-    ctx: Context<{ params: { enrollmentId: string } }>
-) => {
-    const { params, set } = ctx;
-    const { enrollmentId } = params;
+// export const updateQuizProgress = async (
+//     ctx: Context<{ body: UpdateQuizProgressSchema }>
+// ) => {
+//     const { body, set } = ctx;
+//     const { enrollmentId, lessonId, correctAnswers } = body; // Assuming schema has these fields
 
-    try {
-        const chapterProgress = await getChapterProgress(enrollmentId);
+//     try {
+//         const result = await updateQuizProgressFN(enrollmentId, lessonId, correctAnswers);
 
-        set.status = 200;
-        return {
-            message: "Progress fetched successfully",
-            status: true,
-            data: {
-                chapters: chapterProgress,
-            },
-        };
-    } catch (error: any) {
-        console.error("Get progress error:", error);
-        set.status = 500;
-        return {
-            message: error?.message || "Failed to fetch progress",
-            status: false,
-        };
-    }
-};
+//         if (!result.success) {
+//             set.status = 400;
+//             return {
+//                 status: false,
+//                 message: result.message
+//             };
+//         }
 
-/**
- * Get student's enrollment details with progress
- */
-export const getEnrollmentDetails = async (
-    ctx: Context<{ params: { studentId: string; courseId: string } }>
-) => {
-    const { params, set } = ctx;
-    const { studentId, courseId } = params;
+//         set.status = 200;
+//         return {
+//             message: "Progress updated successfully",
+//             status: true,
+//         };
+//     } catch (error: any) {
+//         console.error("Update progress error:", error);
+//         set.status = 500;
+//         return {
+//             message: error?.message || "Failed to update progress",
+//             status: false,
+//         };
+//     }
+// };
 
-    try {
-        const enrollment = await getStudentCourseEnrollment(studentId, courseId);
 
-        if (!enrollment) {
-            set.status = 404;
-            return {
-                message: "Enrollment not found",
-                status: false,
-            };
-        }
 
-        set.status = 200;
-        return {
-            message: "Enrollment details fetched successfully",
-            status: true,
-            data: enrollment,
-        };
-    } catch (error: any) {
-        console.error("Get enrollment error:", error);
-        set.status = 500;
-        return {
-            message: error?.message || "Failed to fetch enrollment details",
-            status: false,
-        };
-    }
-};
+// export const getCourseProgress = async (
+//     ctx: Context<{ params: { enrollmentId: string } }>
+// ) => {
+//     const { params, set } = ctx;
+//     const { enrollmentId } = params;
+
+//     try {
+//         const chapterProgress = await getChapterProgress(enrollmentId);
+
+//         set.status = 200;
+//         return {
+//             message: "Progress fetched successfully",
+//             status: true,
+//             data: {
+//                 chapters: chapterProgress,
+//             },
+//         };
+//     } catch (error: any) {
+//         console.error("Get progress error:", error);
+//         set.status = 500;
+//         return {
+//             message: error?.message || "Failed to fetch progress",
+//             status: false,
+//         };
+//     }
+// };
+
+// export const getEnrollmentDetails = async (
+//     ctx: Context<{ params: { studentId: string; courseId: string } }>
+// ) => {
+//     const { params, set } = ctx;
+//     const { studentId, courseId } = params;
+
+//     try {
+//         const enrollment = await getStudentCourseEnrollment(studentId, courseId);
+
+//         if (!enrollment) {
+//             set.status = 404;
+//             return {
+//                 message: "Enrollment not found",
+//                 status: false,
+//             };
+//         }
+
+//         set.status = 200;
+//         return {
+//             message: "Enrollment details fetched successfully",
+//             status: true,
+//             data: enrollment,
+//         };
+//     } catch (error: any) {
+//         console.error("Get enrollment error:", error);
+//         set.status = 500;
+//         return {
+//             message: error?.message || "Failed to fetch enrollment details",
+//             status: false,
+//         };
+//     }
+// };

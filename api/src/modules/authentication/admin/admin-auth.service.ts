@@ -1,8 +1,10 @@
 import { Context } from "elysia";
-import { ADMIN_COLLECTION, CreateAdminSchema, LoginAdminSchema } from "./admin-auth.model";
+import { CreateAdminSchema, LoginAdminSchema } from "./admin-auth.model";
 import { getCollection } from "@lib/config/db.config";
 import { DecodePaseto, EncodePaseto } from "@lib/utils/paseto";
 import { ObjectId } from "mongodb";
+import { RoleType } from "@types";
+import { ADMIN_COLLECTION } from "@lib/Db_collections";
 
 export const createAdmin = async (ctx: Context<{ body: CreateAdminSchema }>) => {
     const { body, set } = ctx;
@@ -23,7 +25,10 @@ export const createAdmin = async (ctx: Context<{ body: CreateAdminSchema }>) => 
         await adminCollection.insertOne({
             email,
             password: hashedPassword,
-            role: "admin",
+            role: RoleType.ADMIN,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
 
         set.status = 201;
@@ -63,8 +68,8 @@ export const loginAdmin = async (ctx: Context<{ body: LoginAdminSchema }>) => {
                 ideal_access_token_admin: {
                     value: token,
                     httpOnly: true,
-                    secure: true,
-                    sameSite: "none",
+                    secure: false,
+                    sameSite: "lax",
                     path: "/",
                     maxAge: 1000 * 60 * 60 * 24,
                     expires: new Date(Date.now() + 1000 * 60 * 60 * 24),

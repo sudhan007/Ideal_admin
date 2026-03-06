@@ -1,8 +1,7 @@
 import { t } from "elysia";
 import { baseFields } from "@lib/models/base-model.config";
-import { QuestionType, Difficulty, OptionType } from "@types";
+import { QuestionType, Difficulty, OptionType, OptionsFormat, QuestionModel, SolutionType } from "@types";
 
-export const QUESTIONS_COLLECTION = "questions"
 
 export const questionBase = t.Object({
     courseId: t.String(),
@@ -10,24 +9,33 @@ export const questionBase = t.Object({
     lessonId: t.String(),
     type: t.Enum(QuestionType),
     difficulty: t.Enum(Difficulty),
-    marks: t.Number({ default: 1 }),
-    question: t.Object({
-        text: t.Optional(t.String()),
-        latex: t.Optional(t.String())
-    }),
-    options: t.Optional(
+    questionModel: t.Enum(QuestionModel),
+    questionSet: t.String(),
+    solutionType: t.Enum(SolutionType),
+    solution: t.Union([t.String(), t.File()]),
+    question: t.Union([
+        t.Object({
+            text: t.Optional(t.String()),
+            latex: t.Optional(t.String())
+        }),
+        t.String()
+    ]),
+
+    options: t.Optional(t.Union([
         t.Array(
             t.Object({
                 id: t.Enum(OptionType),
-                answer: t.String()
+                answer: t.String(),
+                type: t.Enum(OptionsFormat)
             })
-        )
-    ),
+        ),
+        t.String()
+    ])),
+
     correctAnswer: t.String(),
     isActive: t.Optional(t.Boolean({ default: true })),
     ...baseFields.properties
-});
-
+})
 export const createQuestionDto = {
     body: questionBase,
     detail: {
@@ -35,5 +43,154 @@ export const createQuestionDto = {
         summary: "Create Question"
     }
 }
+export const questionUpdate = t.Partial(
+    t.Object({
+        courseId: t.String(),
+        chapterId: t.String(),
+        lessonId: t.String(),
+        difficulty: t.Enum(Difficulty),
+        type: t.Enum(QuestionType),
+        solutionType: t.Optional(t.Enum(SolutionType)),
+        solution: t.Optional(t.Union([t.String(), t.File()])),
+        question: t.Optional(t.Union([
+            t.Object({
+                text: t.Optional(t.String()),
+                latex: t.Optional(t.String())
+            }),
+            t.String()
+        ])),
+        options: t.Optional(t.Union([
+            t.Array(
+                t.Object({
+                    id: t.Enum(OptionType),
+                    answer: t.String(),
+                    type: t.Enum(OptionsFormat)
+                })
+            ),
+            t.String()
+        ])),
+
+        correctAnswer: t.String(),
+    })
+)
+export const updateQuestionDto = {
+    body: questionUpdate,
+    params: t.Object({
+        questionId: t.String()
+    }),
+    detail: {
+        description: "Update an existing question (partial update)",
+        summary: "Update Question"
+    }
+}
+export const getQuizQuestionsDto = {
+    query: t.Object({
+        courseId: t.String({
+            description: "Course ID"
+        }),
+        chapterId: t.Optional(t.String({
+            description: "Chapter ID (optional)"
+        })),
+        lessonId: t.Optional(t.String({
+            description: "Lesson ID (optional)"
+        })),
+        questionModel: t.Optional(t.Union([
+            t.Literal("PRE"),
+            t.Literal("POST")
+        ])),
+        difficulty: t.Optional(t.Union([
+            t.Literal("EASY"),
+            t.Literal("MEDIUM"),
+            t.Literal("HARD")
+        ], {
+            description: "Difficulty level (optional)"
+        })),
+        type: t.Optional(t.Union([
+            t.Literal("MCQ"),
+            t.Literal("FILL_BLANK")
+        ], {
+            description: "Question type (optional)"
+        })),
+        search: t.Optional(t.String()),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+    }),
+    detail: {
+        summary: "Get quiz questions with filters and shuffling",
+        description: "Fetches quiz questions without answers, shuffles questions and MCQ options"
+    }
+}
+export const submitQuizAnswersDto = {
+    body: t.Object({
+        enrollmentId: t.String(),
+        lessonId: t.String(),
+        quizType: t.String(),
+        questionSetId: t.Optional(t.String()),
+        answers: t.Array(
+            t.Object({
+                questionId: t.String(),
+                answer: t.String(),
+                isMarkedForReview: t.Boolean({ default: false })
+            })
+        )
+    }),
+    detail: {
+        summary: "Submit quiz answers",
+        description: "Submits quiz answers and returns results"
+    }
+}
+export const getAllQuizQuestionsDto = {
+    query: t.Object({
+        courseId: t.String({
+            description: "Course ID"
+        }),
+        chapterId: t.Optional(t.String({
+            description: "Chapter ID (optional)"
+        })),
+        lessonId: t.Optional(t.String({
+            description: "Lesson ID (optional)"
+        })),
+        difficulty: t.Optional(t.Union([
+            t.Literal("EASY"),
+            t.Literal("MEDIUM"),
+            t.Literal("HARD")
+        ], {
+            description: "Difficulty level (optional)"
+        })),
+        questionModel: t.Optional(t.Union([
+            t.Literal("PRE"),
+            t.Literal("POST")
+        ])),
+        type: t.Optional(t.Union([
+            t.Literal("MCQ"),
+            t.Literal("FILL_BLANK")
+        ], {
+            description: "Question type (optional)"
+        })),
+        search: t.Optional(t.String()),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+    }),
+    detail: {
+        summary: "Get quiz questions with filters and shuffling",
+        description: "Fetches quiz questions without answers, shuffles questions and MCQ options"
+    }
+}
+export const getQuestionsByIdDto = {
+    params: t.Object({
+        questionId: t.String({
+            description: "Question ID"
+        })
+    }),
+    detail: {
+        summary: "Get quiz questions with filters and shuffling",
+        description: "Fetches quiz questions without answers, shuffles questions and MCQ options"
+    }
+}
 
 export type CreateQuestionSchema = typeof createQuestionDto.body.static;
+export type GetQuizQuestionsSchema = typeof getQuizQuestionsDto.query.static;
+export type UpdateQuizSchema = typeof updateQuestionDto.body.static
+export type GetAllQuizQuestionsSchema = typeof getAllQuizQuestionsDto.query.static;
+export type GetQuestionsById = typeof getQuestionsByIdDto.params.static;
+export type SubmitQuizSchema = typeof submitQuizAnswersDto.body.static;

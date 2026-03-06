@@ -1,8 +1,9 @@
 import { type Context } from "elysia";
 import { getCollection } from "@lib/config/db.config";
-import { GetStaffsDropdownQuery, GetStaffsQuery, STAFFS_COLLECTION, StaffUpdateInput, type StaffCreateInput } from "./staffs.model";
+import { GetStaffsDropdownQuery, GetStaffsQuery, StaffUpdateInput, type StaffCreateInput } from "./staffs.model";
 import { uploadFileToS3 } from "@lib/utils/s3";
 import { ObjectId } from "mongodb";
+import { STAFFS_COLLECTION } from "@lib/Db_collections";
 
 
 export const createStaff = async (ctx: Context<{ body: StaffCreateInput }>) => {
@@ -11,12 +12,18 @@ export const createStaff = async (ctx: Context<{ body: StaffCreateInput }>) => {
 
   try {
     const staffsCollection = await getCollection(STAFFS_COLLECTION);
+
+    const existingStaff = await staffsCollection.findOne({ phoneNumber });
+    if (existingStaff) {
+      set.status = 400;
+      return { error: "Staff with this phone number already exists" };
+    }
+
     const { fullUrl, fileKey } = await uploadFileToS3(image, "staffs");
     const staffData = {
       staffName,
       phoneNumber,
       role,
-      // permissions,
       image: fullUrl ?? fileKey,
       createdAt: new Date(),
       isDeleted: false,
@@ -29,14 +36,14 @@ export const createStaff = async (ctx: Context<{ body: StaffCreateInput }>) => {
       staffId: result.insertedId,
     }
   } catch (error) {
-    console.log(error)
+    console.log("Error creating staff", error)
     set.status = 500;
     return { error: "Failed to create staff" };
   }
 }
 
 export const updateStaff = async (ctx: Context<{ params: { staffId: string }, body: StaffUpdateInput }>) => {
-  const { params, body } = ctx;
+  const { params, body, set } = ctx;
 
   try {
     const { staffId } = params;
@@ -48,6 +55,22 @@ export const updateStaff = async (ctx: Context<{ params: { staffId: string }, bo
 
     if (!staff) {
       return { error: "Staff not found" };
+    }
+
+    if (phoneNumber) {
+      const duplicateStaff = await staffsCollection.findOne({
+        _id: { $ne: new ObjectId(staffId) },
+        phoneNumber: { $regex: `^${phoneNumber}$`, $options: "i" },
+        isDeleted: false,
+      });
+
+      if (duplicateStaff) {
+        set.status = 400;
+        return {
+          status: false,
+          error: "Staff with this phone number already exists",
+        };
+      }
     }
 
     let url = staff.image;
@@ -63,7 +86,6 @@ export const updateStaff = async (ctx: Context<{ params: { staffId: string }, bo
           staffName,
           phoneNumber,
           role,
-          // permissions,
           image: url,
         },
       }
@@ -127,6 +149,7 @@ export const getAllStaffs = async (ctx: Context<{ query: GetStaffsQuery }>) => {
               phoneNumber: 1,
               role: 1,
               image: 1,
+              isActive: 1,
               createdAt: 1,
             },
           },
@@ -150,11 +173,7 @@ export const getAllStaffs = async (ctx: Context<{ query: GetStaffsQuery }>) => {
         hasNextPage: page < Math.ceil(total / limit),
         hasPrevPage: page > 1,
       },
-      meta: {
-        search: search || null,
-        sortBy: query.sortBy || 'createdAt',
-        sortOrder: query.sortOrder || 'asc',
-      },
+
       message: 'Staffs retrieved successfully',
     };
   } catch (error) {
@@ -219,9 +238,7 @@ export const getAllStaffsForDropdown = async (ctx: Context<{ query: GetStaffsDro
         hasNextPage: page < total,
         hasPrevPage: page > 1,
       },
-      meta: {
-        search: search || null,
-      },
+
       message: 'Staffs for dropdown retrieved successfully',
     };
   } catch (error) {
@@ -242,7 +259,7 @@ export const deleteStaff = async (ctx: Context<{ params: { staffId: string } }>)
     const staffsCollection = await getCollection(STAFFS_COLLECTION);
     const result = await staffsCollection.updateOne(
       { _id: new ObjectId(staffId) },
-      { $set: { isDeleted: true, deletedAt: new Date() } }
+      { $set: { isActive: false, isDeleted: true, updatedAt: new Date() } }
     );
     if (result.modifiedCount === 1) {
       set.status = 200;
@@ -269,10 +286,10 @@ export const toggleStaffBlockStatus = async (ctx: Context<{ params: { staffId: s
       return { error: "Staff not found" };
     }
 
-    const newBlockStatus = !staff.isBlocked;
+    const newBlockStatus = !staff.isActive;
     const result = await staffsCollection.updateOne(
       { _id: new ObjectId(staffId) },
-      { $set: { isBlocked: newBlockStatus } }
+      { $set: { isActive: newBlockStatus } }
     );
 
     if (result.modifiedCount === 1) {

@@ -1,9 +1,6 @@
 import { t } from "elysia";
 import { baseFields } from "@lib/models/base-model.config";
 
-export const COURSE_COLLECTION = "courses";
-
-
 const courseBase = t.Object({
     courseName: t.String({ default: "10th Grade Math CBSE" }),
     mentor: t.String({ default: "mentorId" }),
@@ -13,6 +10,7 @@ const courseBase = t.Object({
     grade: t.String({ default: "gradeId" }),
     courseDurationMinutes: t.String({ default: "0" }),
     isActive: t.Boolean({ default: true }),
+    isTrending: t.Boolean({ default: false }),
     ...baseFields.properties
 });
 
@@ -28,7 +26,7 @@ const courseUpdateModel = t.Object({
     ...courseBase.properties,
     bannerImage: t.Union([
         t.File({ type: "image/*" }),
-        t.String({ format: "uri", description: "URL of the banner image" }),
+        t.String({ description: "URL of the banner image" }),
     ], {
         description: "Either upload a new banner image or provide a URL"
     }),
@@ -36,14 +34,12 @@ const courseUpdateModel = t.Object({
     additionalProperties: false
 });
 
-
 export const courseCreateSchema = {
     body: courseCreateModel,
     consumes: ["multipart/form-data"],
     detail: {
         summary: "Create a new course",
         description: "Requires uploading a banner image",
-        tags: ["Courses"],
     }
 };
 
@@ -52,61 +48,75 @@ export const courseUpdateSchema = {
     detail: {
         summary: "Update a course",
         description: "Partially update course details. bannerImage can be a new file or a URL.",
-        tags: ["Courses"],
     }
 };
 
 export const getCoursesSchema = {
     query: t.Object({
-        page: t.Optional(t.Number({ default: 1, minimum: 1 })),
-        limit: t.Optional(t.Number({ default: 10, minimum: 1, maximum: 100 })),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
         board: t.Optional(t.String()),
         grade: t.Optional(t.String()),
         search: t.Optional(t.String()),
         sortBy: t.Optional(t.Union([t.Literal("courseName"), t.Literal("actualPrice"), t.Literal("createdAt")], { default: "createdAt" })),
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")], { default: "asc" })),
+        trending: t.Optional(t.String()),
     }),
     detail: {
         summary: "Get all courses",
         description: "Retrieve a list of all available courses",
-        tags: ["Courses"],
     }
 };
 
 export const getCourseByIdSchema = {
+    params: t.Object({
+        courseId: t.String(),
+    }),
     detail: {
         summary: "Get a specific course",
         description: "Retrieve details of a specific course",
-        tags: ["Courses"],
     }
 };
 
 export const courseNamesQuerySchema = {
     query: t.Object({
-        page: t.Optional(t.Number({ default: 1, minimum: 1 })),
-        limit: t.Optional(t.Number({ default: 10, minimum: 1, maximum: 100 })),
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
         search: t.Optional(t.String()),
     }),
     detail: {
         summary: "Get course names",
         description: "Retrieve a list of course names matching the search criteria",
-        tags: ["Courses"],
     }
 }
 
 export const courseStatusToggleSchema = {
+    params: t.Object({
+        courseId: t.String(),
+    }),
     detail: {
         summary: "Toggle course active status",
         description: "Activate or deactivate a course by its ID",
-        tags: ["Courses"],
     }
 };
 
 export const courseDeleteSchema = {
+    params: t.Object({
+        courseId: t.String(),
+    }),
     detail: {
         summary: "Delete a course",
         description: "Soft delete a course by its ID",
-        tags: ["Courses"],
+    }
+};
+
+export const toggleTrendingCourseSchema = {
+    params: t.Object({
+        courseId: t.String(),
+    }),
+    detail: {
+        summary: "Toggle course trending status",
+        description: "Toggle the trending status of a course by its ID",
     }
 };
 

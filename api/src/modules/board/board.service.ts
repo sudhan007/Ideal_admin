@@ -1,7 +1,8 @@
 import { Context } from "elysia";
-import { BOARD_COLLECTION, CreateBoardSchema, GetBoardSchema, UpdateBoardSchema } from "./board.model";
+import { CreateBoardSchema, GetBoardSchema, UpdateBoardSchema } from "./board.model";
 import { getCollection } from "@lib/config/db.config";
 import { ObjectId } from "mongodb";
+import { BOARD_COLLECTION } from "@lib/Db_collections";
 
 
 export const createBoard = async (ctx: Context<{ body: CreateBoardSchema }>) => {
@@ -57,8 +58,8 @@ export const updateBoard = async (ctx: Context<{ body: UpdateBoardSchema, params
 export const getAllBoards = async (ctx: Context<{ query: GetBoardSchema }>) => {
     const { set, query } = ctx;
 
-    const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(query.limit) || 15));
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = query.search?.trim() || '';
 
@@ -113,9 +114,7 @@ export const getAllBoards = async (ctx: Context<{ query: GetBoardSchema }>) => {
                 hasNextPage: page < Math.ceil(total / limit),
                 hasPrevPage: page > 1,
             },
-            meta: {
-                search: search || null,
-            },
+
             message: 'Boards retrieved successfully',
         };
     } catch (error) {

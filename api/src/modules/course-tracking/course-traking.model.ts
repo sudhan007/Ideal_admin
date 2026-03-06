@@ -1,24 +1,10 @@
 import { t } from "elysia";
 
-export const updateLessonProgressDto = {
+export const updateVideoProgressDto = {
     body: t.Object({
         enrollmentId: t.String(),
         lessonId: t.String(),
-        videoProgress: t.Optional(
-            t.Object({
-                watchedDuration: t.Number(),
-                totalDuration: t.Number(),
-                lastWatchedPosition: t.Number(),
-            })
-        ),
-        quizProgress: t.Optional(
-            t.Object({
-                passed: t.Boolean(),
-                score: t.Number(),
-                totalQuestions: t.Number(),
-                correctAnswers: t.Number(),
-            })
-        ),
+        watchedSeconds: t.Number(),
     }),
     detail: {
         summary: "Update lesson progress",
@@ -26,4 +12,4 @@ export const updateLessonProgressDto = {
     },
 };
 
-export type UpdateLessonProgressSchema = typeof updateLessonProgressDto.body.static;
+export type UpdateVideoProgressSchema = typeof updateVideoProgressDto.body.static;

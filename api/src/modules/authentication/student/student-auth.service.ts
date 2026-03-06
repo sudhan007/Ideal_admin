@@ -1,13 +1,15 @@
 import { Context } from "elysia";
-import { OTP_COUNT_COLLECTION, OtpSchema, STUDENT_COLLECTION, StudentLoginSchema, verifyOtpSchema, } from "./student-auth.model";
+import { OtpSchema, StudentLoginSchema, verifyOtpSchema, } from "./student-auth.model";
 import { getCollection } from "@lib/config/db.config";
 import axios from "axios";
 import { EncodePaseto } from "@lib/utils/paseto";
-import { RoleType } from "@types";
+import { RoleType, StudentType } from "@types";
+import { OTP_COUNT_COLLECTION, STUDENT_COLLECTION } from "@lib/Db_collections";
+import { subscribeStudentToTopic, updateStudentFcmToken } from "@lib/utils/notification";
 
 export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) => {
     const { body, set } = ctx;
-    const { email, loginMethod, mobileNumber, fcmToken, isActive, isDeleted, createdAt, updatedAt } = body;
+    const { email, loginMethod, mobileNumber, fcmToken } = body;
 
     try {
         const studentCollection = await getCollection(STUDENT_COLLECTION);
@@ -24,6 +26,28 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
             let student = await studentCollection.findOne({ mobileNumber });
 
             if (student) {
+                if (!student.isActive) {
+                    set.status = 400;
+                    return {
+                        message: "Your account has been blocked by admin. Please contact support.",
+                        status: false,
+                    };
+                }
+
+                if (fcmToken && student.fcmToken !== fcmToken) {
+                    await updateStudentFcmToken(student.fcmToken, fcmToken);
+                    await studentCollection.updateOne(
+                        { _id: student._id },
+                        { $set: { fcmToken, updatedAt: new Date() } }
+                    );
+                } else if (fcmToken && !student.fcmToken) {
+                    await subscribeStudentToTopic(fcmToken);
+                    await studentCollection.updateOne(
+                        { _id: student._id },
+                        { $set: { fcmToken, updatedAt: new Date() } }
+                    );
+                }
+
                 const token = await EncodePaseto({
                     id: student._id.toString(),
                     mobileNumber: student.mobileNumber,
@@ -45,12 +69,19 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 fcmToken: fcmToken || "",
                 isActive: true,
                 isDeleted: false,
+                registrationComplete: false,
+                studentType: StudentType.ONLINE,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
 
             const result = await studentCollection.insertOne(newStudent);
             student = { _id: result.insertedId, ...newStudent };
+
+            if (fcmToken) {
+                await subscribeStudentToTopic(fcmToken);
+            }
+
 
             const token = await EncodePaseto({
                 id: student._id.toString(),
@@ -76,6 +107,30 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
             let student = await studentCollection.findOne({ email });
 
             if (student) {
+
+
+                if (!student.isActive) {
+                    set.status = 400;
+                    return {
+                        message: "Your account has been blocked by admin. Please contact support.",
+                        status: false,
+                    };
+                }
+
+                if (fcmToken && student.fcmToken !== fcmToken) {
+                    await updateStudentFcmToken(student.fcmToken, fcmToken);
+                    await studentCollection.updateOne(
+                        { _id: student._id },
+                        { $set: { fcmToken, updatedAt: new Date() } }
+                    );
+                } else if (fcmToken && !student.fcmToken) {
+                    await subscribeStudentToTopic(fcmToken);
+                    await studentCollection.updateOne(
+                        { _id: student._id },
+                        { $set: { fcmToken, updatedAt: new Date() } }
+                    );
+                }
+
                 const token = await EncodePaseto({
                     id: student._id.toString(),
                     mobileNumber: student.mobileNumber,
@@ -108,12 +163,18 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                 fcmToken: fcmToken || "",
                 isActive: true,
                 isDeleted: false,
+                registrationComplete: false,
+                studentType: StudentType.ONLINE,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
 
             const result = await studentCollection.insertOne(newStudent);
             student = { _id: result.insertedId, ...newStudent };
+
+            if (fcmToken) {
+                await subscribeStudentToTopic(fcmToken);
+            }
 
             const token = await EncodePaseto({
                 id: student._id.toString(),
@@ -140,7 +201,7 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
         set.status = 500;
         return { error: "Login failed", status: false };
     }
-}
+};
 export const sendOtp = async (ctx: Context<{ body: OtpSchema }>) => {
     const { body, set } = ctx;
     const { mobile, smsId } = body;
@@ -214,7 +275,6 @@ export const sendOtp = async (ctx: Context<{ body: OtpSchema }>) => {
         };
     }
 };
-
 export const verifyOtp = async ({ body, set }: Context<{ body: verifyOtpSchema }>) => {
     const { otpId, otpNo } = body;
 
@@ -262,4 +322,4 @@ export const verifyOtp = async ({ body, set }: Context<{ body: verifyOtpSchema }
         };
     }
 
-}
+};

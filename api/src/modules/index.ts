@@ -9,6 +9,18 @@ import { adminAuthController } from "./authentication/admin/admin-auth.controlle
 import { boardController } from "./board/board.controller";
 import { gradeController } from "./grade/grade.controller";
 import { paymentController } from "./payment/payment.controller";
+import { questionController } from "./questions/question.controller";
+import { courseForeCastController } from "./course-forecasting/course-forecasting.controller";
+import { courseTrackingController } from "./course-tracking/course-tracking.controller";
+import { taskController } from "./mytask/mytask.controller";
+import { batchController } from "./batches/batches.controller";
+import { attendanceController } from "./attendance/attendance.controller";
+import { courseEnrollmentController } from "./course-enrollment/course-enrollment.controller";
+import { adminDashBoardController } from "./dashboard/dashbord.controller";
+import { notificationController } from "./notification/notification.controller";
+import { ExamController } from "./exams/exam.controller";
+import { DemoCourseController } from "./demo-course/demo-course.controller";
+import { QuestionBankController } from "./question-bank/questionbank.controller";
 
 export const baseController = new Elysia({
     prefix: '/api',
@@ -23,3 +35,15 @@ export const baseController = new Elysia({
     .use(staffsController)
     .use(chaptersController)
     .use(lessonsController)
+    .use(questionController)
+    .use(courseForeCastController)
+    .use(courseTrackingController)
+    .use(taskController)
+    .use(batchController)
+    .use(attendanceController)
+    .use(courseEnrollmentController)
+    .use(adminDashBoardController)
+    .use(notificationController)
+    .use(ExamController)
+    .use(DemoCourseController)
+    .use(QuestionBankController)
