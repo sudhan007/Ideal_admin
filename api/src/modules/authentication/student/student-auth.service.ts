@@ -26,6 +26,7 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
             let student = await studentCollection.findOne({ mobileNumber });
 
             if (student) {
+<<<<<<< HEAD
                 if (!student.isActive) {
                     set.status = 400;
                     return {
@@ -33,6 +34,8 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                         status: false,
                     };
                 }
+=======
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
 
                 if (fcmToken && student.fcmToken !== fcmToken) {
                     await updateStudentFcmToken(student.fcmToken, fcmToken);
@@ -108,6 +111,7 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
 
             if (student) {
 
+<<<<<<< HEAD
 
                 if (!student.isActive) {
                     set.status = 400;
@@ -117,6 +121,8 @@ export const studentLogin = async (ctx: Context<{ body: StudentLoginSchema }>) =
                     };
                 }
 
+=======
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
                 if (fcmToken && student.fcmToken !== fcmToken) {
                     await updateStudentFcmToken(student.fcmToken, fcmToken);
                     await studentCollection.updateOne(

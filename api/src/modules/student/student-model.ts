@@ -102,6 +102,7 @@ export const studentUpdateSchema = {
     contentTypes: ["multipart/form-data"],
 };
 
+<<<<<<< HEAD
 export const adminstudentUpdateSchema = {
     body: adminstudentUpdateModel,
     detail: {
@@ -112,6 +113,8 @@ export const adminstudentUpdateSchema = {
 };
 
 
+=======
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
 export const studentSessionDto = {
     detail: {
         summary: "Get Student Session",
@@ -161,6 +164,7 @@ export const getStudentProfileDto = {
     },
 };
 
+<<<<<<< HEAD
 export const studentStatusToggleSchema = {
     params: t.Object({
         studentId: t.String(),
@@ -175,6 +179,11 @@ export type StudentDetailsCreateInput = typeof studentDetailsCreateSchema.body.s
 export type EducationDetailsCreateInput = typeof educationDetailsCreateSchema.body.static;
 export type StudentUpdateInput = typeof studentUpdateSchema.body.static;
 export type AdminStudentUpdateInput = typeof adminstudentUpdateSchema.body.static;
+=======
+export type StudentDetailsCreateInput = typeof studentDetailsCreateSchema.body.static;
+export type EducationDetailsCreateInput = typeof educationDetailsCreateSchema.body.static;
+export type StudentUpdateInput = typeof studentUpdateSchema.body.static;
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
 export type StudentSessionSchema = typeof studentSessionDto.detail
 export type StudentListSchema = typeof getStudentsListDto.query.static
 export type GetStudentByIdSchema = typeof getStudentByIdDto.params.static

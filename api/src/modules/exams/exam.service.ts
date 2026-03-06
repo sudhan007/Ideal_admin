@@ -892,6 +892,11 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
 
         const submissions = await examSubmissionCollection.aggregate([
             { $match: matchQuery },
+<<<<<<< HEAD
+=======
+
+            // Lookup main task info
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             {
                 $lookup: {
                     from: EXAM_COLLECTION,
@@ -902,6 +907,10 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
             },
             { $unwind: { path: "$exam", preserveNullAndEmptyArrays: true } },
 
+<<<<<<< HEAD
+=======
+            // Lookup student (only needed for ADMIN)
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             ...(role === "ADMIN" ? [{
                 $lookup: {
                     from: STUDENT_COLLECTION,
@@ -911,6 +920,10 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
                 }
             }, { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } }] : []),
 
+<<<<<<< HEAD
+=======
+            // Lookup chapter & lesson
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             {
                 $lookup: {
                     from: CHAPTERS_COLLECTION,
@@ -998,6 +1011,11 @@ export const updateExamQuestion = async (
             set.status = 400;
             return { success: false, message: "Invalid question ID format" };
         }
+<<<<<<< HEAD
+=======
+
+        // ✅ Parse JSON-stringified fields that come through FormData
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
         if (body.question) body.question = parseIfString(body.question);
         if (body.options) body.options = parseIfString(body.options);
 
@@ -1012,6 +1030,10 @@ export const updateExamQuestion = async (
             return { success: false, message: "Question not found" };
         }
 
+<<<<<<< HEAD
+=======
+        // ✅ If a new image File was uploaded, push it to S3 and get the URL
+>>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
         let solution = body.solution;
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
