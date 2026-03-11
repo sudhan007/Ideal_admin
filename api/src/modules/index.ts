@@ -21,6 +21,7 @@ import { notificationController } from "./notification/notification.controller";
 import { ExamController } from "./exams/exam.controller";
 import { DemoCourseController } from "./demo-course/demo-course.controller";
 import { QuestionBankController } from "./question-bank/questionbank.controller";
+import { appVersionController } from "./appversion/appversion.controller";
 
 export const baseController = new Elysia({
     prefix: '/api',
@@ -47,3 +48,4 @@ export const baseController = new Elysia({
     .use(ExamController)
     .use(DemoCourseController)
     .use(QuestionBankController)
+    .use(appVersionController)

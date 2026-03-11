@@ -106,6 +106,179 @@ export const getNextPostQuizSet = async (
 // ─── helper ──────────────────────────────────────────────────────────────────
 // When the request is multipart/form-data, nested objects (question, options)
 // arrive as JSON strings. This utility safely parses them.
+
+
+
+// function parseIfString<T>(value: T | string): T {
+//     if (typeof value === "string") {
+//         try {
+//             return JSON.parse(value) as T;
+//         } catch {
+//             return value as unknown as T;
+//         }
+//     }
+//     return value;
+// }
+// // ─────────────────────────────────────────────────────────────────────────────
+
+// export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
+//     const { body, set } = ctx;
+//     console.log(body, "fff");
+
+//     try {
+
+//         body.question = parseIfString(body.question);
+//         body.options = parseIfString(body.options);
+
+//         if (
+//             body.question &&
+//             typeof body.question === "object" &&
+//             body.question.image instanceof File
+//         ) {
+//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl  // replace File with uploaded URL string
+//             };
+//         }
+
+
+//         validateQuestionByType(body);
+
+//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
+
+//         let solution = body.solution as string;
+
+//         // ✅ If solution is a File (Blob), upload it to S3
+//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+//             solution = fullUrl;
+//         }
+
+//         const questionData = {
+//             ...body,
+//             solution,
+//             question: body.question,   // already parsed above
+//             options: body.options,
+//             courseId: new ObjectId(body.courseId),
+//             lessonId: new ObjectId(body.lessonId),
+//             chapterId: new ObjectId(body.chapterId),
+//             isActive: true,
+//             createdAt: new Date(),
+//             updatedAt: new Date()
+//         };
+
+//         const result = await questionsCollection.insertOne(questionData);
+
+//         set.status = 201;
+//         return {
+//             success: true,
+//             message: "Question created successfully",
+//             data: {
+//                 id: result.insertedId,
+//                 ...questionData
+//             }
+//         };
+//     } catch (error: any) {
+//         console.log("Create Question Error", error);
+//         set.status = error.message.includes("must have") ? 400 : 500;
+//         return {
+//             success: false,
+//             message: error.message || "Failed to create question"
+//         };
+//     }
+// };
+
+// export const updateQuestion = async (
+//     ctx: Context<{
+//         body: UpdateQuizSchema;
+//         params: { questionId: string };
+//     }>
+// ) => {
+//     const { body, params, set } = ctx;
+//     const questionId = params.questionId;
+
+//     try {
+//         if (!ObjectId.isValid(questionId)) {
+//             set.status = 400;
+//             return { success: false, message: "Invalid question ID format" };
+//         }
+
+//         // ✅ Parse JSON-stringified fields that come through FormData
+//         if (body.question) body.question = parseIfString(body.question);
+//         if (body.options) body.options = parseIfString(body.options);
+
+
+//         if (
+//             body.question &&
+//             typeof body.question === "object" &&
+//             body.question.image instanceof File
+//         ) {
+//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl  // replace File with uploaded URL string
+//             };
+//         }
+
+
+//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
+
+//         const existing = await questionsCollection.findOne({
+//             _id: new ObjectId(questionId)
+//         });
+
+//         if (!existing) {
+//             set.status = 404;
+//             return { success: false, message: "Question not found" };
+//         }
+
+//         // ✅ If a new image File was uploaded, push it to S3 and get the URL
+//         let solution = body.solution;
+//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+//             solution = fullUrl;
+//         }
+
+//         const updatedData: any = {
+//             ...existing,
+//             ...body,
+//             solution,               // use resolved URL (or original string for TEXT/VIDEO)
+//             updatedAt: new Date()
+//         };
+
+//         if (body.courseId) updatedData.courseId = new ObjectId(body.courseId);
+//         if (body.chapterId) updatedData.chapterId = new ObjectId(body.chapterId);
+//         if (body.lessonId) updatedData.lessonId = new ObjectId(body.lessonId);
+
+//         validateQuestionByType(updatedData);
+
+//         const result = await questionsCollection.updateOne(
+//             { _id: new ObjectId(questionId) },
+//             { $set: { ...updatedData, updatedAt: new Date() } }
+//         );
+
+//         if (result.matchedCount === 0) {
+//             set.status = 404;
+//             return { success: false, message: "Question not found" };
+//         }
+
+//         set.status = 200;
+//         return {
+//             success: true,
+//             message: "Question updated successfully",
+//             data: { id: questionId, ...updatedData }
+//         };
+//     } catch (error: any) {
+//         console.error("Update Question Error:", error);
+//         set.status = error.message?.includes("must have") ? 400 : 500;
+//         return {
+//             success: false,
+//             message: error.message || "Failed to update question"
+//         };
+//     }
+// };
+
 function parseIfString<T>(value: T | string): T {
     if (typeof value === "string") {
         try {
@@ -120,12 +293,29 @@ function parseIfString<T>(value: T | string): T {
 
 export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
     const { body, set } = ctx;
-    console.log(body, "fff");
 
     try {
-
         body.question = parseIfString(body.question);
         body.options = parseIfString(body.options);
+
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
 
         validateQuestionByType(body);
 
@@ -142,7 +332,7 @@ export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }
         const questionData = {
             ...body,
             solution,
-            question: body.question,   // already parsed above
+            question: body.question,
             options: body.options,
             courseId: new ObjectId(body.courseId),
             lessonId: new ObjectId(body.lessonId),
@@ -151,6 +341,9 @@ export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }
             createdAt: new Date(),
             updatedAt: new Date()
         };
+
+        // Remove the raw questionImage field — it's already merged into question.image
+        delete (questionData as any).questionImage;
 
         const result = await questionsCollection.insertOne(questionData);
 
@@ -192,6 +385,27 @@ export const updateQuestion = async (
         if (body.question) body.question = parseIfString(body.question);
         if (body.options) body.options = parseIfString(body.options);
 
+        // ✅ Handle question image — sent as a separate "questionImage" field in FormData
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        // ✅ Legacy: also handle inline File on question.image
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+
         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
 
         const existing = await questionsCollection.findOne({
@@ -203,7 +417,7 @@ export const updateQuestion = async (
             return { success: false, message: "Question not found" };
         }
 
-        // ✅ If a new image File was uploaded, push it to S3 and get the URL
+        // ✅ If a new solution image File was uploaded, push it to S3 and get the URL
         let solution = body.solution;
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
@@ -213,9 +427,12 @@ export const updateQuestion = async (
         const updatedData: any = {
             ...existing,
             ...body,
-            solution,               // use resolved URL (or original string for TEXT/VIDEO)
+            solution,
             updatedAt: new Date()
         };
+
+        // Remove the raw questionImage field — already merged into question.image
+        delete updatedData.questionImage;
 
         if (body.courseId) updatedData.courseId = new ObjectId(body.courseId);
         if (body.chapterId) updatedData.chapterId = new ObjectId(body.chapterId);
@@ -248,6 +465,8 @@ export const updateQuestion = async (
         };
     }
 };
+
+
 // export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
 //     const { body, set } = ctx;
 //     console.log(body, "fff")

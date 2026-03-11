@@ -70,7 +70,9 @@ export const addQuestionToExamDto = {
         question: t.Union([
             t.Object({
                 text: t.Optional(t.String()),
-                latex: t.Optional(t.String())
+                latex: t.Optional(t.String()),
+                image: t.Optional(t.String())
+
             }),
             t.String()   // JSON-stringified when sent via FormData
         ]),
@@ -84,6 +86,7 @@ export const addQuestionToExamDto = {
             ),
             t.String()   // JSON-stringified when sent via FormData
         ])),
+        questionImage: t.Optional(t.File()),
         correctAnswer: t.String(),
         isActive: t.Optional(t.Boolean({ default: true })),
         ...baseFields.properties
@@ -104,10 +107,13 @@ export const examquestionUpdateDto = t.Partial(
         question: t.Optional(t.Union([
             t.Object({
                 text: t.Optional(t.String()),
-                latex: t.Optional(t.String())
+                latex: t.Optional(t.String()),
+                image: t.Optional(t.String())
             }),
             t.String()
         ])),
+        questionImage: t.Optional(t.File()),
+
         options: t.Optional(t.Union([
             t.Array(
                 t.Object({

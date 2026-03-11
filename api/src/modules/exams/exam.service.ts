@@ -490,6 +490,26 @@ export const addQuestionToExam = async (ctx: Context<{ body: AddQuestionToExamSc
         body.question = parseIfString(body.question);
         body.options = parseIfString(body.options);
 
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+
+
         validateQuestionByType(body);
 
         const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
@@ -513,6 +533,9 @@ export const addQuestionToExam = async (ctx: Context<{ body: AddQuestionToExamSc
             updatedAt: new Date()
         };
 
+        delete (questionData as any).questionImage;
+
+
         const result = await questionsCollection.insertOne(questionData);
 
         set.status = 201;
@@ -530,6 +553,103 @@ export const addQuestionToExam = async (ctx: Context<{ body: AddQuestionToExamSc
         return {
             success: false,
             message: error.message || "Failed to create question"
+        };
+    }
+};
+
+export const updateExamQuestion = async (
+    ctx: Context<{
+        body: ExamQuestionUpdate;
+        params: { questionId: string };
+    }>
+) => {
+    const { body, params, set } = ctx;
+    const questionId = params.questionId;
+
+    try {
+        if (!ObjectId.isValid(questionId)) {
+            set.status = 400;
+            return { success: false, message: "Invalid question ID format" };
+        }
+        if (body.question) body.question = parseIfString(body.question);
+        if (body.options) body.options = parseIfString(body.options);
+
+
+
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        // ✅ Legacy: also handle inline File on question.image
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+
+
+        const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
+
+        const existing = await questionsCollection.findOne({
+            _id: new ObjectId(questionId)
+        });
+
+        if (!existing) {
+            set.status = 404;
+            return { success: false, message: "Question not found" };
+        }
+
+        let solution = body.solution;
+        if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+            solution = fullUrl;
+        }
+
+        const updatedData: any = {
+            ...existing,
+            ...body,
+            solution,               // use resolved URL (or original string for TEXT/VIDEO)
+            updatedAt: new Date()
+        };
+
+
+        delete updatedData.questionImage;
+
+        if (body.examId) updatedData.examId = new ObjectId(body.examId);
+
+        validateQuestionByType(updatedData);
+
+        const result = await questionsCollection.updateOne(
+            { _id: new ObjectId(questionId) },
+            { $set: { ...updatedData, updatedAt: new Date() } }
+        );
+
+        if (result.matchedCount === 0) {
+            set.status = 404;
+            return { success: false, message: "Question not found" };
+        }
+
+        set.status = 200;
+        return {
+            success: true,
+            message: "Question updated successfully",
+            data: { id: questionId, ...updatedData }
+        };
+    } catch (error: any) {
+        console.error("Update Question Error:", error);
+        set.status = error.message?.includes("must have") ? 400 : 500;
+        return {
+            success: false,
+            message: error.message || "Failed to update question"
         };
     }
 };
@@ -892,11 +1012,6 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
 
         const submissions = await examSubmissionCollection.aggregate([
             { $match: matchQuery },
-<<<<<<< HEAD
-=======
-
-            // Lookup main task info
->>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             {
                 $lookup: {
                     from: EXAM_COLLECTION,
@@ -907,10 +1022,6 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
             },
             { $unwind: { path: "$exam", preserveNullAndEmptyArrays: true } },
 
-<<<<<<< HEAD
-=======
-            // Lookup student (only needed for ADMIN)
->>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             ...(role === "ADMIN" ? [{
                 $lookup: {
                     from: STUDENT_COLLECTION,
@@ -920,10 +1031,6 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
                 }
             }, { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } }] : []),
 
-<<<<<<< HEAD
-=======
-            // Lookup chapter & lesson
->>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
             {
                 $lookup: {
                     from: CHAPTERS_COLLECTION,
@@ -993,86 +1100,6 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
         return {
             error: "Failed to get submissions",
             details: error instanceof Error ? error.message : "Unknown error"
-        };
-    }
-};
-
-export const updateExamQuestion = async (
-    ctx: Context<{
-        body: ExamQuestionUpdate;
-        params: { questionId: string };
-    }>
-) => {
-    const { body, params, set } = ctx;
-    const questionId = params.questionId;
-
-    try {
-        if (!ObjectId.isValid(questionId)) {
-            set.status = 400;
-            return { success: false, message: "Invalid question ID format" };
-        }
-<<<<<<< HEAD
-=======
-
-        // ✅ Parse JSON-stringified fields that come through FormData
->>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
-        if (body.question) body.question = parseIfString(body.question);
-        if (body.options) body.options = parseIfString(body.options);
-
-        const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
-
-        const existing = await questionsCollection.findOne({
-            _id: new ObjectId(questionId)
-        });
-
-        if (!existing) {
-            set.status = 404;
-            return { success: false, message: "Question not found" };
-        }
-
-<<<<<<< HEAD
-=======
-        // ✅ If a new image File was uploaded, push it to S3 and get the URL
->>>>>>> b89f4909d28e0104a48b2cd9c131f72c45f90eda
-        let solution = body.solution;
-        if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
-            const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
-            solution = fullUrl;
-        }
-
-        const updatedData: any = {
-            ...existing,
-            ...body,
-            solution,               // use resolved URL (or original string for TEXT/VIDEO)
-            updatedAt: new Date()
-        };
-
-        if (body.examId) updatedData.examId = new ObjectId(body.examId);
-
-        validateQuestionByType(updatedData);
-
-        const result = await questionsCollection.updateOne(
-            { _id: new ObjectId(questionId) },
-            { $set: { ...updatedData, updatedAt: new Date() } }
-        );
-
-        if (result.matchedCount === 0) {
-            set.status = 404;
-            return { success: false, message: "Question not found" };
-        }
-
-        set.status = 200;
-        return {
-            success: true,
-            message: "Question updated successfully",
-            data: { id: questionId, ...updatedData }
-        };
-    } catch (error: any) {
-        console.error("Update Question Error:", error);
-        set.status = error.message?.includes("must have") ? 400 : 500;
-        return {
-            success: false,
-            message: error.message || "Failed to update question"
         };
     }
 };

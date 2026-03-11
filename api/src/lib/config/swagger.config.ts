@@ -19,6 +19,9 @@ export const swaggerConfig = () => {
           },
           {
             url: "https://api.indiancrackers.shop"
+          },
+          {
+            url: "https://panoptic-pauline-demiurgic.ngrok-free.dev"
           }
         ],
         info: {

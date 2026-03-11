@@ -40,10 +40,14 @@ export const addQuestionToDemoCourseDto = {
         question: t.Union([
             t.Object({
                 text: t.Optional(t.String()),
-                latex: t.Optional(t.String())
+                latex: t.Optional(t.String()),
+                image: t.Optional(t.String())
+
             }),
             t.String()
         ]),
+        questionImage: t.Optional(t.File()),
+
         questionModel: t.Enum(QuestionModel),
         options: t.Optional(t.Union([
             t.Array(
@@ -139,10 +143,14 @@ export const demoquestionUpdateDto = t.Partial(
         question: t.Optional(t.Union([
             t.Object({
                 text: t.Optional(t.String()),
-                latex: t.Optional(t.String())
+                latex: t.Optional(t.String()),
+                image: t.Optional(t.String())
+
             }),
             t.String()
         ])),
+        questionImage: t.Optional(t.File()),
+
         options: t.Optional(t.Union([
             t.Array(
                 t.Object({

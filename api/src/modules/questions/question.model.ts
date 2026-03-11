@@ -16,11 +16,12 @@ export const questionBase = t.Object({
     question: t.Union([
         t.Object({
             text: t.Optional(t.String()),
-            latex: t.Optional(t.String())
+            latex: t.Optional(t.String()),
+            image: t.Optional(t.String())
         }),
         t.String()
     ]),
-
+    questionImage: t.Optional(t.File()),
     options: t.Optional(t.Union([
         t.Array(
             t.Object({
@@ -31,11 +32,11 @@ export const questionBase = t.Object({
         ),
         t.String()
     ])),
-
     correctAnswer: t.String(),
     isActive: t.Optional(t.Boolean({ default: true })),
     ...baseFields.properties
 })
+
 export const createQuestionDto = {
     body: questionBase,
     detail: {
@@ -43,6 +44,7 @@ export const createQuestionDto = {
         summary: "Create Question"
     }
 }
+
 export const questionUpdate = t.Partial(
     t.Object({
         courseId: t.String(),
@@ -55,10 +57,14 @@ export const questionUpdate = t.Partial(
         question: t.Optional(t.Union([
             t.Object({
                 text: t.Optional(t.String()),
-                latex: t.Optional(t.String())
+                latex: t.Optional(t.String()),
+                // image here will be the S3 URL string after upload (not a File)
+                image: t.Optional(t.String())
             }),
             t.String()
         ])),
+        // ✅ Top-level field — this is where the raw File arrives from FormData
+        questionImage: t.Optional(t.File()),
         options: t.Optional(t.Union([
             t.Array(
                 t.Object({
@@ -69,10 +75,10 @@ export const questionUpdate = t.Partial(
             ),
             t.String()
         ])),
-
         correctAnswer: t.String(),
     })
 )
+
 export const updateQuestionDto = {
     body: questionUpdate,
     params: t.Object({

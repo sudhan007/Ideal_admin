@@ -202,6 +202,26 @@ export const addQuestionToDemoCourse = async (ctx: Context<{ body: AddQuestionTo
         body.question = parseIfString(body.question);
         body.options = parseIfString(body.options);
 
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+
+
         validateQuestionByType(body);
 
         const questionsCollection = await getCollection(DEMO_QUIZ_COLLECTION);
@@ -224,6 +244,9 @@ export const addQuestionToDemoCourse = async (ctx: Context<{ body: AddQuestionTo
             createdAt: new Date(),
             updatedAt: new Date()
         };
+
+        delete (questionData as any).questionImage;
+
 
         const result = await questionsCollection.insertOne(questionData);
 
@@ -263,6 +286,27 @@ export const updateExamQuestion = async (
         if (body.question) body.question = parseIfString(body.question);
         if (body.options) body.options = parseIfString(body.options);
 
+
+        if (body.questionImage instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+        // ✅ Legacy: also handle inline File on question.image
+        else if (
+            body.question &&
+            typeof body.question === "object" &&
+            body.question.image instanceof File
+        ) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+            body.question = {
+                ...body.question,
+                image: fullUrl
+            };
+        }
+
         const questionsCollection = await getCollection(DEMO_QUIZ_COLLECTION);
 
         const existing = await questionsCollection.findOne({
@@ -289,9 +333,12 @@ export const updateExamQuestion = async (
             updatedAt: new Date()
         };
 
+        delete updatedData.questionImage;
         if (body.demoCourseId) updatedData.demoCourseId = new ObjectId(body.demoCourseId);
 
+
         validateQuestionByType(updatedData);
+
 
         const result = await questionsCollection.updateOne(
             { _id: new ObjectId(questionId) },
