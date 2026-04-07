@@ -47,18 +47,12 @@ export const addQuestionToDemoCourseDto = {
             t.String()
         ]),
         questionImage: t.Optional(t.File()),
-
         questionModel: t.Enum(QuestionModel),
-        options: t.Optional(t.Union([
-            t.Array(
-                t.Object({
-                    id: t.Enum(OptionType),
-                    answer: t.String(),
-                    type: t.Enum(OptionsFormat)
-                })
-            ),
-            t.String()
-        ])),
+        options: t.Union([t.String(), t.Array(t.Any())]),
+        optionImage_0: t.Optional(t.File()),
+        optionImage_1: t.Optional(t.File()),
+        optionImage_2: t.Optional(t.File()),
+        optionImage_3: t.Optional(t.File()),
         correctAnswer: t.String(),
         isActive: t.Optional(t.Boolean({ default: true })),
         ...baseFields.properties
@@ -150,20 +144,25 @@ export const demoquestionUpdateDto = t.Partial(
             t.String()
         ])),
         questionImage: t.Optional(t.File()),
-
-        options: t.Optional(t.Union([
-            t.Array(
-                t.Object({
-                    id: t.Enum(OptionType),
-                    answer: t.String(),
-                    type: t.Enum(OptionsFormat)
-                })
-            ),
-            t.String()
-        ])),
+        options: t.Union([t.String(), t.Array(t.Any())]),
+        optionImage_0: t.Optional(t.File()),
+        optionImage_1: t.Optional(t.File()),
+        optionImage_2: t.Optional(t.File()),
+        optionImage_3: t.Optional(t.File()),
         correctAnswer: t.String(),
     })
 );
+export const demoDeleteQuestionDto = {
+    query: t.Object({
+        questionId: t.String({
+            description: "Course ID"
+        }),
+    }),
+    detail: {
+        summary: "Delete Question",
+        description: "Delete Question"
+    }
+}
 export type CreateDemoCourseSchema = typeof createDemoCourseDto.body.static;
 export type AddQuestionToDemoCourseSchema = typeof addQuestionToDemoCourseDto.body.static
 export type GetDemoQuizQuestionsSchema = typeof getDemoQuizQuestionsDto.query.static;
@@ -172,3 +171,4 @@ export type GetDemoQuestionsById = typeof getDemoQuestionsByIdDto.params.static;
 export type UpdateDemoCourseSchema = typeof updateDemoCourseDto.body.static
 export type DemoGetQuerySchema = typeof demoCourseGetQueryDto.query.static
 export type DemoQuestionUpdate = typeof demoquestionUpdateDto.body.static
+export type DemoDeleteQuestionSchema = typeof demoDeleteQuestionDto.query.static;

@@ -30,4 +30,5 @@ export const EXAM_QUIZ_COLLECTION = "exam_quizzes"
 export const DEMO_COURSE_COLLECTION = "demo_courses"
 export const DEMO_QUIZ_COLLECTION = "demo_quizzes"
 export const APP_VERSION_COLLECTION = "app_versions"
+export const MATHPIX_PDF_COLLECTION = "mathpix_pdf"
 

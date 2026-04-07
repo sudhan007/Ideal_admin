@@ -76,16 +76,11 @@ export const addQuestionToExamDto = {
             }),
             t.String()   // JSON-stringified when sent via FormData
         ]),
-        options: t.Optional(t.Union([
-            t.Array(
-                t.Object({
-                    id: t.Enum(OptionType),
-                    answer: t.String(),
-                    type: t.Enum(OptionsFormat)
-                })
-            ),
-            t.String()   // JSON-stringified when sent via FormData
-        ])),
+        options: t.Union([t.String(), t.Array(t.Any())]),
+        optionImage_0: t.Optional(t.File()),
+        optionImage_1: t.Optional(t.File()),
+        optionImage_2: t.Optional(t.File()),
+        optionImage_3: t.Optional(t.File()),
         questionImage: t.Optional(t.File()),
         correctAnswer: t.String(),
         isActive: t.Optional(t.Boolean({ default: true })),
@@ -113,17 +108,11 @@ export const examquestionUpdateDto = t.Partial(
             t.String()
         ])),
         questionImage: t.Optional(t.File()),
-
-        options: t.Optional(t.Union([
-            t.Array(
-                t.Object({
-                    id: t.Enum(OptionType),
-                    answer: t.String(),
-                    type: t.Enum(OptionsFormat)
-                })
-            ),
-            t.String()
-        ])),
+        options: t.Union([t.String(), t.Array(t.Any())]),
+        optionImage_0: t.Optional(t.File()),
+        optionImage_1: t.Optional(t.File()),
+        optionImage_2: t.Optional(t.File()),
+        optionImage_3: t.Optional(t.File()),
         correctAnswer: t.String(),
     })
 );
@@ -225,6 +214,31 @@ export const GetSubmissionsDto = {
     }
 };
 
+export const studentExamReportsDto = {
+    query: t.Object({
+        examId: t.String(),
+        studentId: t.Optional(t.String()),
+        page: t.Optional(t.String({ default: "1" })),
+        limit: t.Optional(t.String({ default: "10" })),
+    }),
+    detail: {
+        summary: "Get task submissions",
+        description: "Get task submissions with filters",
+    }
+};
+
+export const deleteExamQuestionDto = {
+    query: t.Object({
+        questionId: t.String({
+            description: "question ID"
+        }),
+    }),
+    detail: {
+        summary: "Delete Question",
+        description: "Delete Question"
+    }
+}
+
 export type ExamCreateSchema = typeof createExamDto.body.static;
 export type ExamGetSchema = typeof getExamDto.query.static
 export type GetExamsByCourseSchema = typeof getExamByCourseDto.query.static
@@ -234,4 +248,6 @@ export type submitExamQuizAnswersSchema = typeof submitExamQuizAnswersDto.body.s
 export type GetQuestionsById = typeof getQuestionsByIdDto.params.static;
 export type GetAllExamQuestions = typeof getAllQuizQuestionsDto.query.static
 export type GetSubmissionsSchema = typeof GetSubmissionsDto.query.static;
+export type StudentSubmissionSchema = typeof studentExamReportsDto.query.static;
 export type ExamQuestionUpdate = typeof examquestionUpdateDto.body.static
+export type DeleteExamQuestionSchema = typeof deleteExamQuestionDto.query.static;

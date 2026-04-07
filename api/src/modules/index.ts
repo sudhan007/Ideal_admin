@@ -22,6 +22,7 @@ import { ExamController } from "./exams/exam.controller";
 import { DemoCourseController } from "./demo-course/demo-course.controller";
 import { QuestionBankController } from "./question-bank/questionbank.controller";
 import { appVersionController } from "./appversion/appversion.controller";
+import { bulkUploadController } from "./bulkupload/bulkupload.controller";
 
 export const baseController = new Elysia({
     prefix: '/api',
@@ -49,3 +50,4 @@ export const baseController = new Elysia({
     .use(DemoCourseController)
     .use(QuestionBankController)
     .use(appVersionController)
+    .use(bulkUploadController)

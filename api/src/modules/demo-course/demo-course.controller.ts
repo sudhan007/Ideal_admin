@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
-import { addQuestionToDemoCourse, createDemoCourse, getAllQuestions, getCourseDemo, getQuestionById, getQuizQuestions, submitQuizAnswers, updateDemoCourse, updateExamQuestion } from "./demo-course.service";
-import { addQuestionToDemoCourseDto, createDemoCourseDto, demoCourseGetQueryDto, demoquestionUpdateDto, getDemoQuestionsByIdDto, getDemoQuizQuestionsDto, submitDemoQuizAnswersDto, updateDemoCourseDto } from "./demo-course.model";
+import { addQuestionToDemoCourse, createDemoCourse, demoDeleteQuestion, getAllQuestions, getCourseDemo, getQuestionById, getQuizQuestions, submitQuizAnswers, updateDemoCourse, updateExamQuestion } from "./demo-course.service";
+import { addQuestionToDemoCourseDto, createDemoCourseDto, demoCourseGetQueryDto, demoDeleteQuestionDto, demoquestionUpdateDto, getDemoQuestionsByIdDto, getDemoQuizQuestionsDto, submitDemoQuizAnswersDto, updateDemoCourseDto } from "./demo-course.model";
 import { adminAndStudent } from "@lib/utils/roles-guard";
 
 export const DemoCourseController = new Elysia({
@@ -18,6 +18,7 @@ export const DemoCourseController = new Elysia({
     .post("/submit-answers", submitQuizAnswers, { ...submitDemoQuizAnswersDto, beforeHandle: adminAndStudent })
     .get("/question/:questionId", getQuestionById, getDemoQuestionsByIdDto)
     .get("/all-questions", getAllQuestions, getDemoQuizQuestionsDto)
+    .delete("/deletequestion", demoDeleteQuestion, demoDeleteQuestionDto)
 
 
 

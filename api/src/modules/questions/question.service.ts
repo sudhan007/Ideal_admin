@@ -1,12 +1,13 @@
 import { Context } from "elysia";
-import { CreateQuestionSchema, GetQuestionsById, GetQuizQuestionsSchema, SubmitQuizSchema, UpdateQuizSchema } from "./question.model";
+import { CreateQuestionSchema, DeleteQuestionSchema, GetQuestionsById, GetQuizQuestionsSchema, SubmitQuizSchema, UpdateQuizSchema } from "./question.model";
 import { passPercentage, QuestionModel, QuestionType, SolutionType, StoreType } from "@types";
 import { getCollection } from "@lib/config/db.config";
 import { ObjectId } from "mongodb";
 import { updateQuizProgressFN } from "@lib/utils/course-tracking";
 import { quizAttemptsLogger } from "@lib/utils/quiz-logger";
-import { CHAPTERS_COLLECTION, COURSE_COLLECTION, LESSON_PROGRESS_COLLECTION, LESSONS_COLLECTION, POST_QUIZ_ATTEMPTS_COLLECTION, QUESTIONS_COLLECTION } from "@lib/Db_collections";
+import { CHAPTERS_COLLECTION, COURSE_COLLECTION, LESSON_PROGRESS_COLLECTION, LESSONS_COLLECTION, MATHPIX_PDF_COLLECTION, POST_QUIZ_ATTEMPTS_COLLECTION, QUESTIONS_COLLECTION } from "@lib/Db_collections";
 import { uploadFileToS3 } from "@lib/utils/s3";
+import { runBulkUploadPipeline } from "@lib/utils/bulkupload";
 
 const validateQuestionByType = (body: CreateQuestionSchema) => {
     const { type, options, correctAnswer }: any = body;
@@ -38,6 +39,17 @@ const validateQuestionByType = (body: CreateQuestionSchema) => {
             throw new Error("Invalid question type");
     }
 };
+
+function parseIfString<T>(value: T | string): T {
+    if (typeof value === "string") {
+        try {
+            return JSON.parse(value) as T;
+        } catch {
+            return value as unknown as T;
+        }
+    }
+    return value;
+}
 function shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -100,37 +112,21 @@ export const getNextPostQuizSet = async (
         return { questionSetId: null, message: error?.message || "Failed to select question set" };
     }
 };
-
-
-
-// ─── helper ──────────────────────────────────────────────────────────────────
-// When the request is multipart/form-data, nested objects (question, options)
-// arrive as JSON strings. This utility safely parses them.
-
-
-
-// function parseIfString<T>(value: T | string): T {
-//     if (typeof value === "string") {
-//         try {
-//             return JSON.parse(value) as T;
-//         } catch {
-//             return value as unknown as T;
-//         }
-//     }
-//     return value;
-// }
-// // ─────────────────────────────────────────────────────────────────────────────
-
 // export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
 //     const { body, set } = ctx;
-//     console.log(body, "fff");
 
 //     try {
-
 //         body.question = parseIfString(body.question);
 //         body.options = parseIfString(body.options);
 
-//         if (
+//         if (body.questionImage instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+//         else if (
 //             body.question &&
 //             typeof body.question === "object" &&
 //             body.question.image instanceof File
@@ -138,10 +134,9 @@ export const getNextPostQuizSet = async (
 //             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
 //             body.question = {
 //                 ...body.question,
-//                 image: fullUrl  // replace File with uploaded URL string
+//                 image: fullUrl
 //             };
 //         }
-
 
 //         validateQuestionByType(body);
 
@@ -158,7 +153,7 @@ export const getNextPostQuizSet = async (
 //         const questionData = {
 //             ...body,
 //             solution,
-//             question: body.question,   // already parsed above
+//             question: body.question,
 //             options: body.options,
 //             courseId: new ObjectId(body.courseId),
 //             lessonId: new ObjectId(body.lessonId),
@@ -167,6 +162,9 @@ export const getNextPostQuizSet = async (
 //             createdAt: new Date(),
 //             updatedAt: new Date()
 //         };
+
+//         // Remove the raw questionImage field — it's already merged into question.image
+//         delete (questionData as any).questionImage;
 
 //         const result = await questionsCollection.insertOne(questionData);
 
@@ -189,108 +187,6 @@ export const getNextPostQuizSet = async (
 //     }
 // };
 
-// export const updateQuestion = async (
-//     ctx: Context<{
-//         body: UpdateQuizSchema;
-//         params: { questionId: string };
-//     }>
-// ) => {
-//     const { body, params, set } = ctx;
-//     const questionId = params.questionId;
-
-//     try {
-//         if (!ObjectId.isValid(questionId)) {
-//             set.status = 400;
-//             return { success: false, message: "Invalid question ID format" };
-//         }
-
-//         // ✅ Parse JSON-stringified fields that come through FormData
-//         if (body.question) body.question = parseIfString(body.question);
-//         if (body.options) body.options = parseIfString(body.options);
-
-
-//         if (
-//             body.question &&
-//             typeof body.question === "object" &&
-//             body.question.image instanceof File
-//         ) {
-//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
-//             body.question = {
-//                 ...body.question,
-//                 image: fullUrl  // replace File with uploaded URL string
-//             };
-//         }
-
-
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         const existing = await questionsCollection.findOne({
-//             _id: new ObjectId(questionId)
-//         });
-
-//         if (!existing) {
-//             set.status = 404;
-//             return { success: false, message: "Question not found" };
-//         }
-
-//         // ✅ If a new image File was uploaded, push it to S3 and get the URL
-//         let solution = body.solution;
-//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
-//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
-//             solution = fullUrl;
-//         }
-
-//         const updatedData: any = {
-//             ...existing,
-//             ...body,
-//             solution,               // use resolved URL (or original string for TEXT/VIDEO)
-//             updatedAt: new Date()
-//         };
-
-//         if (body.courseId) updatedData.courseId = new ObjectId(body.courseId);
-//         if (body.chapterId) updatedData.chapterId = new ObjectId(body.chapterId);
-//         if (body.lessonId) updatedData.lessonId = new ObjectId(body.lessonId);
-
-//         validateQuestionByType(updatedData);
-
-//         const result = await questionsCollection.updateOne(
-//             { _id: new ObjectId(questionId) },
-//             { $set: { ...updatedData, updatedAt: new Date() } }
-//         );
-
-//         if (result.matchedCount === 0) {
-//             set.status = 404;
-//             return { success: false, message: "Question not found" };
-//         }
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Question updated successfully",
-//             data: { id: questionId, ...updatedData }
-//         };
-//     } catch (error: any) {
-//         console.error("Update Question Error:", error);
-//         set.status = error.message?.includes("must have") ? 400 : 500;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to update question"
-//         };
-//     }
-// };
-
-function parseIfString<T>(value: T | string): T {
-    if (typeof value === "string") {
-        try {
-            return JSON.parse(value) as T;
-        } catch {
-            return value as unknown as T;
-        }
-    }
-    return value;
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
     const { body, set } = ctx;
 
@@ -298,34 +194,62 @@ export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }
         body.question = parseIfString(body.question);
         body.options = parseIfString(body.options);
 
+        // ── Question image ─────────────────────────────────────────────────────
         if (body.questionImage instanceof File) {
-            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
+            const { fullUrl } = await uploadFileToS3(body.questionImage, 'question_images');
+            body.question = { ...body.question, image: fullUrl };
+        } else if (body.question?.image instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, 'question_images');
+            body.question = { ...body.question, image: fullUrl };
         }
-        else if (
-            body.question &&
-            typeof body.question === "object" &&
-            body.question.image instanceof File
-        ) {
-            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
+
+        // ── Option images ──────────────────────────────────────────────────────
+        if (Array.isArray(body.options)) {
+            const uploadPromises = body.options.map(async (opt: any, i: number) => {
+                if (opt.type === 'IMAGE') {
+                    // Try both body[`optionImage_${i}`] and body.options[i] direct file
+                    const file =
+                        (body as any)[`optionImage_${i}`] ??
+                        (opt.answer instanceof File ? opt.answer : null);
+
+                    console.log(`Option ${i} file:`, file, typeof file); // 👈 Add this to debug
+
+                    if (file instanceof File) {
+                        const { fullUrl } = await uploadFileToS3(file, 'option_images');
+                        return { ...opt, answer: fullUrl };
+                    }
+
+                    // If answer is already a valid S3/http URL (edit mode), keep it
+                    if (
+                        typeof opt.answer === 'string' &&
+                        opt.answer.startsWith('http')
+                    ) {
+                        return opt;
+                    }
+
+                    // At this point it's a raw filename string — upload failed to resolve
+                    // Return as-is and log warning
+                    console.warn(`Option ${i} has IMAGE type but no File was found. Raw answer: ${opt.answer}`);
+                }
+                return opt;
+            });
+
+            body.options = await Promise.all(uploadPromises);
+        }
+
+        // Clean up raw optionImage_N fields before saving
+        for (let i = 0; i < 10; i++) {
+            delete (body as any)[`optionImage_${i}`];
         }
 
         validateQuestionByType(body);
 
         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
 
+        // ── Solution image ─────────────────────────────────────────────────────
         let solution = body.solution as string;
-
-        // ✅ If solution is a File (Blob), upload it to S3
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
-            const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+            const { fullUrl } = await uploadFileToS3(body.solution, 'solution_images');
             solution = fullUrl;
         }
 
@@ -339,10 +263,9 @@ export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }
             chapterId: new ObjectId(body.chapterId),
             isActive: true,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
         };
 
-        // Remove the raw questionImage field — it's already merged into question.image
         delete (questionData as any).questionImage;
 
         const result = await questionsCollection.insertOne(questionData);
@@ -350,19 +273,13 @@ export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }
         set.status = 201;
         return {
             success: true,
-            message: "Question created successfully",
-            data: {
-                id: result.insertedId,
-                ...questionData
-            }
+            message: 'Question created successfully',
+            data: { id: result.insertedId, ...questionData },
         };
     } catch (error: any) {
-        console.log("Create Question Error", error);
-        set.status = error.message.includes("must have") ? 400 : 500;
-        return {
-            success: false,
-            message: error.message || "Failed to create question"
-        };
+        console.log('Create Question Error', error);
+        set.status = error.message.includes('must have') ? 400 : 500;
+        return { success: false, message: error.message || 'Failed to create question' };
     }
 };
 
@@ -381,29 +298,51 @@ export const updateQuestion = async (
             return { success: false, message: "Invalid question ID format" };
         }
 
-        // ✅ Parse JSON-stringified fields that come through FormData
+        // ✅ Parse JSON-stringified fields from FormData
         if (body.question) body.question = parseIfString(body.question);
         if (body.options) body.options = parseIfString(body.options);
 
-        // ✅ Handle question image — sent as a separate "questionImage" field in FormData
+        // ✅ Handle question image upload
         if (body.questionImage instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
-        }
-        // ✅ Legacy: also handle inline File on question.image
-        else if (
+            body.question = { ...body.question, image: fullUrl };
+        } else if (
             body.question &&
             typeof body.question === "object" &&
             body.question.image instanceof File
         ) {
             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
+            body.question = { ...body.question, image: fullUrl };
+        }
+
+        // ✅ Handle option images — upload new Files, keep existing S3 URLs as-is
+        if (Array.isArray(body.options)) {
+            const uploadPromises = body.options.map(async (opt: any, i: number) => {
+                if (opt.type === 'IMAGE') {
+                    const file = (body as any)[`optionImage_${i}`];
+
+                    if (file instanceof File) {
+                        // New file uploaded — push to S3
+                        const { fullUrl } = await uploadFileToS3(file, "option_images");
+                        return { ...opt, answer: fullUrl };
+                    }
+
+                    // No new file — keep existing S3 URL unchanged
+                    if (typeof opt.answer === 'string' && opt.answer.startsWith('http')) {
+                        return opt;
+                    }
+
+                    console.warn(`Option ${i} has IMAGE type but no File or URL:`, opt.answer);
+                }
+                return opt;
+            });
+
+            body.options = await Promise.all(uploadPromises);
+        }
+
+        // ✅ Clean up raw optionImage_N fields before saving to DB
+        for (let i = 0; i < 4; i++) {
+            delete (body as any)[`optionImage_${i}`];
         }
 
         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
@@ -417,7 +356,7 @@ export const updateQuestion = async (
             return { success: false, message: "Question not found" };
         }
 
-        // ✅ If a new solution image File was uploaded, push it to S3 and get the URL
+        // ✅ Handle solution image upload
         let solution = body.solution;
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
@@ -431,7 +370,7 @@ export const updateQuestion = async (
             updatedAt: new Date()
         };
 
-        // Remove the raw questionImage field — already merged into question.image
+        // Remove raw questionImage field — already merged into question.image
         delete updatedData.questionImage;
 
         if (body.courseId) updatedData.courseId = new ObjectId(body.courseId);
@@ -465,58 +404,9 @@ export const updateQuestion = async (
         };
     }
 };
-
-
-// export const createQuestion = async (ctx: Context<{ body: CreateQuestionSchema }>) => {
-//     const { body, set } = ctx;
-//     console.log(body, "fff")
-//     try {
-//         validateQuestionByType(body);
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         let solution = body.solution;
-
-//         if (body.solutionType === SolutionType.IMAGE && body.solution) {
-//             const image = body.solution;
-//             const { fullUrl } = await uploadFileToS3(image, "solution_images");
-//             solution = fullUrl;
-//         }
-
-//         const questionData = {
-//             ...body,
-//             solution,
-//             courseId: new ObjectId(body.courseId),
-//             lessonId: new ObjectId(body.lessonId),
-//             chapterId: new ObjectId(body.chapterId),
-//             isActive: true,
-//             createdAt: new Date(),
-//             updatedAt: new Date()
-//         };
-
-//         const result = await questionsCollection.insertOne(questionData);
-
-//         set.status = 201;
-//         return {
-//             success: true,
-//             message: "Question created successfully",
-//             data: {
-//                 id: result.insertedId,
-//                 ...questionData
-//             }
-//         };
-//     } catch (error: any) {
-//         console.log("Create Question Error", error);
-//         set.status = error.message.includes("must have") ? 400 : 500;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to create question"
-//         };
-//     }
-// }
-
 // export const updateQuestion = async (
 //     ctx: Context<{
-//         body: UpdateQuizSchema
+//         body: UpdateQuizSchema;
 //         params: { questionId: string };
 //     }>
 // ) => {
@@ -526,9 +416,31 @@ export const updateQuestion = async (
 //     try {
 //         if (!ObjectId.isValid(questionId)) {
 //             set.status = 400;
-//             return {
-//                 success: false,
-//                 message: "Invalid question ID format"
+//             return { success: false, message: "Invalid question ID format" };
+//         }
+
+//         // ✅ Parse JSON-stringified fields that come through FormData
+//         if (body.question) body.question = parseIfString(body.question);
+//         if (body.options) body.options = parseIfString(body.options);
+
+//         // ✅ Handle question image — sent as a separate "questionImage" field in FormData
+//         if (body.questionImage instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+//         // ✅ Legacy: also handle inline File on question.image
+//         else if (
+//             body.question &&
+//             typeof body.question === "object" &&
+//             body.question.image instanceof File
+//         ) {
+//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
 //             };
 //         }
 
@@ -540,17 +452,25 @@ export const updateQuestion = async (
 
 //         if (!existing) {
 //             set.status = 404;
-//             return {
-//                 success: false,
-//                 message: "Question not found"
-//             };
+//             return { success: false, message: "Question not found" };
+//         }
+
+//         // ✅ If a new solution image File was uploaded, push it to S3 and get the URL
+//         let solution = body.solution;
+//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+//             solution = fullUrl;
 //         }
 
 //         const updatedData: any = {
 //             ...existing,
 //             ...body,
+//             solution,
 //             updatedAt: new Date()
 //         };
+
+//         // Remove the raw questionImage field — already merged into question.image
+//         delete updatedData.questionImage;
 
 //         if (body.courseId) updatedData.courseId = new ObjectId(body.courseId);
 //         if (body.chapterId) updatedData.chapterId = new ObjectId(body.chapterId);
@@ -558,43 +478,22 @@ export const updateQuestion = async (
 
 //         validateQuestionByType(updatedData);
 
-//         // if (body.type && body.type !== existing.type) {
-//         //     set.status = 400;
-//         //     return {
-//         //         success: false,
-//         //         message: "Cannot change question type after creation"
-//         //     };
-//         // }
-
-//         // Perform the update
 //         const result = await questionsCollection.updateOne(
 //             { _id: new ObjectId(questionId) },
-//             {
-//                 $set: {
-//                     ...updatedData,
-//                     updatedAt: new Date()
-//                 }
-//             }
+//             { $set: { ...updatedData, updatedAt: new Date() } }
 //         );
 
 //         if (result.matchedCount === 0) {
 //             set.status = 404;
-//             return {
-//                 success: false,
-//                 message: "Question not found"
-//             };
+//             return { success: false, message: "Question not found" };
 //         }
 
 //         set.status = 200;
 //         return {
 //             success: true,
 //             message: "Question updated successfully",
-//             data: {
-//                 id: questionId,
-//                 ...updatedData
-//             }
+//             data: { id: questionId, ...updatedData }
 //         };
-
 //     } catch (error: any) {
 //         console.error("Update Question Error:", error);
 //         set.status = error.message?.includes("must have") ? 400 : 500;
@@ -604,172 +503,6 @@ export const updateQuestion = async (
 //         };
 //     }
 // };
-// export const getQuizQuestions = async (ctx: Context<{ query: GetQuizQuestionsSchema }>) => {
-//     const { query, set, store } = ctx;
-//     const { id: studentId } = store as StoreType;  // student's _id
-//     const { courseId, chapterId, lessonId, difficulty, type, page = 1, limit = 5, questionModel } = query;
-
-//     try {
-//         // 1. Get lesson progress for this student + lesson
-//         const progressCollection = await getCollection(LESSON_PROGRESS_COLLECTION);
-
-//         const progress = await progressCollection.findOne({
-//             studentId: new ObjectId(studentId),
-//             courseId: new ObjectId(courseId),
-//             chapterId: new ObjectId(chapterId),
-//             lessonId: new ObjectId(lessonId),
-//         });
-
-//         // If no progress document → treat as not attempted
-//         const isPreQuizAttempted = progress && progress.isPreQuizAttempted
-
-
-//         // 2. Build question filter
-//         const filter: any = {
-//             courseId: new ObjectId(courseId),
-//             isActive: true,
-//             isDeleted: { $ne: true }
-//         };
-
-//         if (chapterId) filter.chapterId = new ObjectId(chapterId);
-//         if (lessonId) filter.lessonId = new ObjectId(lessonId);
-//         if (difficulty) filter.difficulty = difficulty;
-//         if (type) filter.type = type;
-//         if (questionModel) filter.questionModel = questionModel;
-
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         const questions = await questionsCollection.find(filter).toArray();
-
-//         const shuffledQuestions = shuffleArray(questions);
-//         const limitedQuestions = shuffledQuestions.slice(0, limit);
-
-//         const processedQuestions = limitedQuestions.map(question => {
-//             const baseQuestion: any = {
-//                 id: question._id,
-//                 courseId: question.courseId,
-//                 chapterId: question.chapterId,
-//                 lessonId: question.lessonId,
-//                 type: question.type,
-//                 difficulty: question.difficulty,
-//                 question: question.question,
-//                 questionModel: question.questionModel
-//             };
-
-//             if (question.type === "MCQ" && question.options) {
-//                 baseQuestion.options = shuffleArray(question.options);
-//             }
-
-//             return baseQuestion;
-//         });
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Quiz questions fetched successfully",
-//             data: {
-//                 questions: processedQuestions,
-//                 total: processedQuestions.length,
-//                 isPreQuizAttempted: isPreQuizAttempted,
-//             }
-//         };
-
-//     } catch (error: any) {
-//         console.error("Get Quiz Questions Error:", error);
-//         set.status = 500;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to fetch quiz questions"
-//         };
-//     }
-// };
-
-
-
-// export const getQuizQuestions = async (ctx: Context<{ query: GetQuizQuestionsSchema }>) => {
-//     const { query, set ,store} = ctx;
-//     const {id} = store as StoreType
-//     const { courseId, chapterId, lessonId, difficulty, type, page = 1, limit = 5, questionModel, } = query;
-
-//     try {
-
-//         const filter: any = {
-//             courseId: new ObjectId(courseId),
-//             isActive: true,
-//             isDeleted: { $ne: true }
-//         };
-
-//         // Add optional filters
-//         if (chapterId) {
-//             filter.chapterId = new ObjectId(chapterId);
-//         }
-//         if (lessonId) {
-//             filter.lessonId = new ObjectId(lessonId);
-//         }
-//         if (difficulty) {
-//             filter.difficulty = difficulty;
-//         }
-//         if (type) {
-//             filter.type = type;
-//         }
-//         if (questionModel) {
-//             filter.questionModel = questionModel;
-//         }
-
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         // Fetch questions from database
-//         const questions = await questionsCollection
-//             .find(filter)
-//             .toArray();
-
-//         // Shuffle questions
-//         const shuffledQuestions = shuffleArray(questions);
-
-//         // Take only the requested limit
-//         const limitedQuestions = shuffledQuestions.slice(0, limit);
-
-//         // Process questions: remove answers and shuffle MCQ options
-//         const processedQuestions = limitedQuestions.map(question => {
-//             const baseQuestion: any = {
-//                 id: question._id,
-//                 courseId: question.courseId,
-//                 chapterId: question.chapterId,
-//                 lessonId: question.lessonId,
-//                 type: question.type,
-//                 difficulty: question.difficulty,
-//                 question: question.question,
-//                 questionModel: question.questionModel
-//             };
-
-//             // If MCQ, include shuffled options but remove correctAnswer
-//             if (question.type === "MCQ" && question.options) {
-//                 baseQuestion.options = shuffleArray(question.options);
-//             }
-
-//             // Don't include correctAnswer in response for mobile app
-//             return baseQuestion;
-//         });
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Quiz questions fetched successfully",
-//             data: {
-//                 questions: processedQuestions,
-//                 total: processedQuestions.length,
-//             }
-//         };
-
-//     } catch (error: any) {
-//         console.error("Get Quiz Questions Error:", error);
-//         set.status = 400;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to fetch quiz questions"
-//         };
-//     }
-// }
 export const getQuizQuestions = async (ctx: Context<{ query: GetQuizQuestionsSchema }>) => {
     const { query, set, store } = ctx;
     const { id: studentId, role } = store as StoreType;
@@ -1116,83 +849,6 @@ export const getAllQuestions = async (ctx: Context<{ query: GetQuizQuestionsSche
         };
     }
 };
-// export const getAllQuestions = async (ctx: Context<{ query: GetQuizQuestionsSchema }>) => {
-//     const { query, set } = ctx;
-
-//     const courseId = query.courseId;
-//     const chapterId = query.chapterId;
-//     const lessonId = query.lessonId;
-//     const difficulty = query.difficulty;
-//     const type = query.type;
-//     const search = query.search?.trim();
-//     const limit = Math.max(1, Math.min(50, Number(query.limit) || 10));     // 1–50
-//     const page = Math.max(1, Number(query.page) || 1);
-//     const skip = (page - 1) * limit;
-
-//     if (!courseId) {
-//         set.status = 400;
-//         return { success: false, message: "courseId is required" };
-//     }
-
-//     try {
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         const filter: any = {
-//             courseId: new ObjectId(courseId),
-//             isActive: true,
-//             isDeleted: { $ne: true },
-//         };
-
-//         if (chapterId) filter.chapterId = new ObjectId(chapterId);
-//         if (lessonId) filter.lessonId = new ObjectId(lessonId);
-//         if (difficulty) filter.difficulty = difficulty;
-//         if (type) filter.type = type;
-
-//         if (search) {
-//             filter.$or = [
-//                 { "question.text": { $regex: search, $options: "i" } },
-//                 { "question.latex": { $regex: search, $options: "i" } },
-//             ];
-//         }
-
-//         const total = await questionsCollection.countDocuments(filter);
-
-//         const questions = await questionsCollection
-//             .find(filter)
-//             .skip(skip)
-//             .limit(limit)
-//             .sort({ createdAt: -1 })
-//             .toArray();
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Quiz questions fetched successfully",
-//             data: {
-//                 questions,
-//                 pagination: {
-//                     total,
-//                     page,
-//                     limit,
-//                     totalPages: Math.ceil(total / limit),
-//                     hasNextPage: page * limit < total,
-//                     hasPrevPage: page > 1,
-//                 },
-//             },
-//         };
-
-//     } catch (error: any) {
-//         console.error("Get Quiz Questions Error:", error);
-//         set.status = 500; // better to use 500 for server errors
-//         return {
-//             success: false,
-//             message: "Failed to fetch quiz questions",
-//             error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-//         };
-//     }
-// };
-
-
 export const checkPreQuizAttempts = async (
     enrollmentId: string,
     lessonId: string
@@ -1231,7 +887,6 @@ export const checkPreQuizAttempts = async (
         };
     }
 };
-
 export const checkPostQuizAttempts = async (
     enrollmentId: string,
     lessonId: string
@@ -1262,7 +917,6 @@ export const checkPostQuizAttempts = async (
         return { canAttempt: false, remainingAttempts: 0, message: error?.message || "Failed to check attempts" };
     }
 };
-
 export const submitQuizAnswers = async (
     ctx: Context<{ body: SubmitQuizSchema }>
 ) => {
@@ -1497,361 +1151,6 @@ export const submitQuizAnswers = async (
         return { success: false, message: error.message || "Failed to submit and evaluate quiz" };
     }
 };
-
-
-// export const submitQuizAnswers = async (
-//     ctx: Context<{ body: SubmitQuizSchema }>
-// ) => {
-//     const { body, set, store } = ctx;
-//     const { id } = store as StoreType;
-//     const { enrollmentId, lessonId, answers, quizType } = body;
-
-//     try {
-//         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
-//         const lesson = await lessonsCollection.findOne({ _id: new ObjectId(lessonId) });
-//         if (!lesson) {
-//             throw new Error("Lesson not found");
-//         }
-
-//         const courseId = lesson.courseId.toString();
-//         const chapterId = lesson.chapterId.toString();
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-
-//         if (quizType === QuestionModel.PRE) {
-//             // Check remaining attempts
-//             const attemptCheck = await checkPreQuizAttempts(enrollmentId, lessonId);
-
-//             if (!attemptCheck.canAttempt) {
-//                 set.status = 403;
-//                 return {
-//                     success: false,
-//                     message: attemptCheck.message,
-//                     data: {
-//                         remainingAttempts: attemptCheck.remainingAttempts
-//                     }
-//                 };
-//             }
-//         }
-
-//         let correctCount = 0;
-//         let answeredCount = 0;
-//         let unansweredCount = 0;
-//         let skippedCount = 0;
-//         let markedForReviewCount = 0;
-
-//         const processedResults: any[] = [];
-
-//         for (const ans of answers) {
-//             const question = await questionsCollection.findOne({
-//                 _id: new ObjectId(ans.questionId),
-//                 lessonId: new ObjectId(lessonId),
-//                 isActive: true,
-//                 isDeleted: { $ne: true }
-//             });
-
-//             if (!question) {
-//                 throw new Error(`Invalid question ID: ${ans.questionId}`);
-//             }
-
-//             const isAnswered = ans.answer !== "" && ans.answer !== null;
-//             const isSkipped = !isAnswered;
-//             const isMarkedForReview = !!ans.isMarkedForReview;
-
-//             let isCorrect = false;
-
-//             if (isAnswered) {
-//                 answeredCount++;
-//                 if (question.type === "MCQ") {
-//                     if (question.correctAnswer === ans.answer) {
-//                         isCorrect = true;
-//                         correctCount++;
-//                     }
-//                 } else if (question.type === "FILL_BLANK") {
-//                     if (question.correctAnswer === ans.answer.trim()) {
-//                         isCorrect = true;
-//                         correctCount++;
-//                     }
-//                 }
-//             } else {
-//                 unansweredCount++;
-//                 if (isMarkedForReview) {
-//                     skippedCount++;
-//                 }
-//             }
-
-//             if (isMarkedForReview) {
-//                 markedForReviewCount++;
-//             }
-
-//             const resultItem: any = {
-//                 id: question._id.toString(),
-//                 question: question.question,
-//                 type: question.type,
-//                 difficulty: question.difficulty,
-//                 userAnswer: ans.answer || null,
-//                 correctAnswer: question.correctAnswer,
-//                 isCorrect,
-//                 status: isAnswered
-//                     ? (isCorrect ? "correct" : "incorrect")
-//                     : (isMarkedForReview ? "review" : "skipped"),
-//                 isMarkedForReview: isMarkedForReview
-//             };
-
-//             if (question.type === "MCQ" && question.options) {
-//                 resultItem.options = question.options;
-//             }
-
-//             processedResults.push(resultItem);
-//         }
-
-//         // Update progress
-//         if (quizType === QuestionModel.POST) {
-//             const progressResult = await updateQuizProgressFN(
-//                 enrollmentId,
-//                 lessonId,
-//                 correctCount,
-//                 answers.length
-//             );
-
-//             if (!progressResult.success) {
-//                 throw new Error(progressResult.message);
-//             }
-
-//         }
-//         // Log quiz attempt
-//         const logResult = await quizAttemptsLogger(id, courseId, chapterId, lessonId);
-
-//         if (!logResult.success) {
-//             throw new Error(logResult.message);
-//         }
-
-//         // Reduce attempt count if it's a PRE quiz
-//         if (quizType === QuestionModel.PRE) {
-//             const lessonProgressCollection = await getCollection(LESSON_PROGRESS_COLLECTION);
-
-//             await lessonProgressCollection.updateOne(
-//                 {
-//                     enrollmentId: new ObjectId(enrollmentId),
-//                     lessonId: new ObjectId(lessonId)
-//                 },
-//                 {
-//                     $inc: { remaingPreQuizAttempts: -1 },
-//                     $set: {
-//                         isPreQuizAttempted: true,
-//                         updatedAt: new Date()
-//                     }
-//                 }
-//             );
-//         }
-
-//         const wrongCount = answeredCount - correctCount;
-//         const percentage = answeredCount > 0 ? (correctCount / answeredCount) * 100 : 0;
-//         const isPassed = percentage >= passPercentage;
-
-//         const resultMessage = isPassed
-//             ? {
-//                 title: "Yeah! You done",
-//                 description: "Congratulations 🎉 You've successfully completed the quiz! Great effort—keep learning and improving"
-//             }
-//             : {
-//                 title: "Great Effort",
-//                 description: "Don't worry about mistakes — review and try again to improve your score."
-//             };
-//         let updatedAttemptCheck: any = null;
-//         if (quizType === QuestionModel.PRE) {
-//             updatedAttemptCheck = await checkPreQuizAttempts(enrollmentId, lessonId);
-//         }
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Quiz submitted successfully",
-//             data: {
-//                 summary: {
-//                     totalQuestions: answers.length,
-//                     passPercentage: passPercentage,
-//                     answered: answeredCount,
-//                     unanswered: unansweredCount,
-//                     correct: correctCount,
-//                     wrong: wrongCount,
-//                     skipped: skippedCount,
-//                     markedForReview: markedForReviewCount,
-//                     scorePercentage: Math.round(percentage * 100) / 100,
-//                     attempts: logResult.attemptsCount,
-//                     remainingPreQuizAttempts: quizType === QuestionModel.PRE ? updatedAttemptCheck.remainingAttempts : null
-//                 },
-//                 questions: processedResults,
-//                 resultMessage
-//             }
-//         };
-
-//     } catch (error: any) {
-//         console.error("Submit quiz error:", error);
-//         set.status = 400;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to submit and evaluate quiz"
-//         };
-//     }
-// };
-
-
-// export const submitQuizAnswers = async (
-//     ctx: Context<{ body: SubmitQuizSchema }>
-// ) => {
-//     const { body, set, store } = ctx;
-//     const { id } = store as StoreType
-//     const { enrollmentId, lessonId, answers } = body;
-
-//     try {
-//         // Enforce exactly 10 questions (as per your earlier requirement)
-//         // if (answers.length !== 10) {
-//         //     throw new Error("Must submit answers for exactly 10 questions");
-//         // }
-
-//         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
-//         const lesson = await lessonsCollection.findOne({ _id: new ObjectId(lessonId) });
-//         if (!lesson) {
-//             throw new Error("Lesson not found");
-//         }
-//         const courseId = lesson.courseId.toString();
-//         const chapterId = lesson.chapterId.toString();
-
-//         const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
-
-//         let correctCount = 0;
-//         let answeredCount = 0;
-//         let unansweredCount = 0;
-//         let skippedCount = 0;
-//         let markedForReviewCount = 0;
-
-//         const processedResults: any[] = [];
-
-//         for (const ans of answers) {
-//             const question = await questionsCollection.findOne({
-//                 _id: new ObjectId(ans.questionId),
-//                 lessonId: new ObjectId(lessonId),
-//                 isActive: true,
-//                 isDeleted: { $ne: true }
-//             });
-
-//             if (!question) {
-//                 throw new Error(`Invalid question ID: ${ans.questionId}`);
-//             }
-
-//             const isAnswered = ans.answer !== "" && ans.answer !== null;
-//             const isSkipped = !isAnswered;
-//             const isMarkedForReview = !!ans.isMarkedForReview;
-
-//             let isCorrect = false;
-
-//             // Count statistics
-//             if (isAnswered) {
-//                 answeredCount++;
-//                 // Check correctness only if answered
-//                 if (question.type === "MCQ") {
-//                     if (question.correctAnswer === ans.answer) {
-//                         isCorrect = true;
-//                         correctCount++;
-//                     }
-//                 } else if (question.type === "FILL_BLANK") {
-//                     if (question.correctAnswer === ans.answer.trim()) {
-//                         isCorrect = true;
-//                         correctCount++;
-//                     }
-//                 }
-//             } else {
-//                 unansweredCount++;
-//                 if (isMarkedForReview) {
-//                     skippedCount++; // unanswered + review = considered skipped/review
-//                 }
-//             }
-
-//             if (isMarkedForReview) {
-//                 markedForReviewCount++;
-//             }
-
-//             // Build detailed response per question
-//             const resultItem: any = {
-//                 id: question._id.toString(),
-//                 question: question.question,
-//                 type: question.type,
-//                 difficulty: question.difficulty,
-//                 userAnswer: ans.answer || null,
-//                 correctAnswer: question.correctAnswer, // only for review/feedback
-//                 isCorrect,
-//                 status: isAnswered
-//                     ? (isCorrect ? "correct" : "incorrect")
-//                     : (isMarkedForReview ? "review" : "skipped"),
-//                 isMarkedForReview: isMarkedForReview
-//             };
-
-//             if (question.type === "MCQ" && question.options) {
-//                 resultItem.options = question.options; // return original order
-//             }
-
-//             processedResults.push(resultItem);
-//         }
-
-//         // Update progress only with correct answers count (as before)
-//         const progressResult = await updateQuizProgressFN(enrollmentId, lessonId, correctCount, answers.length);
-
-//         if (!progressResult.success) {
-//             throw new Error(progressResult.message);
-//         }
-
-//         const logResult = await quizAttemptsLogger(id, courseId, chapterId, lessonId);
-
-//         if (!logResult.success) {
-//             throw new Error(logResult.message);
-//         }
-
-//         const wrongCount = answeredCount - correctCount;
-//         const percentage = answeredCount > 0 ? (correctCount / answeredCount) * 100 : 0;
-//         const isPassed = percentage >= passPercentage;
-
-//         const resultMessage = isPassed
-//             ? {
-//                 title: "Yeah! You done",
-//                 description: "Congratulations 🎉 You’ve successfully completed the quiz! Great effort—keep learning and improving"
-//             }
-//             : {
-//                 title: "Great Effort",
-//                 description: "Don’t worry about mistakes — review and try again to improve your score."
-//             };
-
-//         set.status = 200;
-//         return {
-//             success: true,
-//             message: "Quiz submitted successfully",
-//             data: {
-//                 summary: {
-//                     totalQuestions: answers.length,
-//                     passPercentage: passPercentage,
-//                     answered: answeredCount,
-//                     unanswered: unansweredCount,
-//                     correct: correctCount,
-//                     wrong: wrongCount,
-//                     skipped: skippedCount,
-//                     markedForReview: markedForReviewCount,
-//                     scorePercentage: Math.round(percentage * 100) / 100,
-//                     attempts: logResult.attemptsCount,
-//                 },
-//                 questions: processedResults,
-//                 resultMessage
-//             }
-//         };
-
-//     } catch (error: any) {
-//         console.error("Submit quiz error:", error);
-//         set.status = 400;
-//         return {
-//             success: false,
-//             message: error.message || "Failed to submit and evaluate quiz"
-//         };
-//     }
-// }
 export const getQuestionById = async (ctx: Context<{ query: GetQuestionsById }>) => {
     const { params, set } = ctx;
     const { questionId } = params;
@@ -1880,3 +1179,38 @@ export const getQuestionById = async (ctx: Context<{ query: GetQuestionsById }>)
         };
     }
 }
+export const deleteQuestion = async (ctx: Context<{ query: DeleteQuestionSchema }>) => {
+    const { query, set } = ctx;
+    const { questionId } = query;
+    try {
+
+        const questionsCollection = await getCollection(QUESTIONS_COLLECTION);
+        const question = await questionsCollection.findOneAndDelete({
+            _id: new ObjectId(questionId),
+        });
+
+        if (!question) {
+            set.status = 404;
+            return {
+                success: false,
+                message: "Question not found"
+            };
+        }
+
+        set.status = 200;
+        return {
+            success: true,
+            message: "Question deleted successfully"
+        };
+
+    } catch (error: any) {
+        console.error("Delete question error:", error);
+        set.status = 400;
+        return {
+            success: false,
+            message: error.message || "Failed to delete question"
+        };
+    }
+}
+
+

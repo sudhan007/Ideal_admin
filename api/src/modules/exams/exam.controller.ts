@@ -1,7 +1,7 @@
 import Elysia from "elysia";
-import { addQuestionToExam, createExam, getAllQuestions, getExamQuizQuestions, getExams, getExamsByCourse, getQuestionById, GetSubmissions, submitExamQuizAnswers, updateExam, updateExamQuestion } from "./exam.service";
-import { addQuestionToExamDto, createExamDto, examquestionUpdateDto, getAllQuizQuestionsDto, getExamDto, getExamQuizQuestionsDto, getQuestionsByIdDto, GetSubmissionsDto, submitExamQuizAnswersDto } from "./exam.model";
-import { adminAndStudent } from "@lib/utils/roles-guard";
+import { addQuestionToExam, createExam, examDeleteQuestion, getAllQuestions, getExamQuizQuestions, getExams, getExamsByCourse, getQuestionById, GetSubmissions, studentExamReports, submitExamQuizAnswers, updateExam, updateExamQuestion } from "./exam.service";
+import { addQuestionToExamDto, createExamDto, deleteExamQuestionDto, examquestionUpdateDto, getAllQuizQuestionsDto, getExamDto, getExamQuizQuestionsDto, getQuestionsByIdDto, GetSubmissionsDto, studentExamReportsDto, submitExamQuizAnswersDto } from "./exam.model";
+import { adminAndStudent, studentOnly } from "@lib/utils/roles-guard";
 
 export const ExamController = new Elysia({
     prefix: '/exam',
@@ -20,4 +20,5 @@ export const ExamController = new Elysia({
     .get("/question/:questionId", getQuestionById, getQuestionsByIdDto)
     .get("/all-questions", getAllQuestions, getAllQuizQuestionsDto)
     .get("/submissions", GetSubmissions, { ...GetSubmissionsDto, beforeHandle: adminAndStudent })
-
+    .get("/student-report", studentExamReports, { ...studentExamReportsDto, beforeHandle: studentOnly })
+    .delete("/deletequestion", examDeleteQuestion, deleteExamQuestionDto)

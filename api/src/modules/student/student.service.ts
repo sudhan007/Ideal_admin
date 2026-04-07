@@ -729,6 +729,8 @@ export const getStudentSession = async (ctx: Context) => {
                     studentName: 1,
                     studentType: 1,
                     isActive: 1,
+                    grade: 1,
+                    nameOfTheBoard: 1,
                     isDeleted: 1,
                 },
             }
@@ -899,6 +901,8 @@ export const getStudentSession = async (ctx: Context) => {
             studentType: student.studentType,
             studentName: student.studentName,
             profileImageUrl: student.profileImageUrl,
+            grade: student.grade,
+            nameOfTheBoard: student.nameOfTheBoard,
             unattendedTaskCount: unattendedTasksCount   // ← added here
         };
 

@@ -262,8 +262,6 @@ export const getAllCourses = async (ctx: Context<{ query: GetCoursesInput }>) =>
       },
     });
 
-
-
     pipeline.push({
       $lookup: {
         from: DEMO_COURSE_COLLECTION,

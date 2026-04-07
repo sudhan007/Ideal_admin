@@ -3,7 +3,7 @@ import { getCollection } from "@lib/config/db.config";
 import { CreateLessonInput, UpdateLessonInput } from "./lessons.model";
 import { ObjectId } from "mongodb";
 import { StoreType } from "@types";
-import { COURSE_COLLECTION, COURSE_ENROLLMENT_COLLECTION, LESSONS_COLLECTION, LESSON_PROGRESS_COLLECTION } from "@lib/Db_collections";
+import { COURSE_COLLECTION, COURSE_ENROLLMENT_COLLECTION, EXAM_COLLECTION, LESSONS_COLLECTION, LESSON_PROGRESS_COLLECTION } from "@lib/Db_collections";
 import { createLessonProgressForExistingEnrollments } from "@lib/utils/course-enrollment";
 
 // export const createLesson = async (ctx: Context<{ body: CreateLessonInput }>) => {
@@ -240,10 +240,12 @@ export const updateLesson = async (
         return { error: "Failed to update lesson", status: false };
     }
 };
-export const getAllLessonsByChapterId = async (ctx: Context<{ params: { chapterId: string } }>) => {
-    const { params, set, store } = ctx;
+export const getAllLessonsByChapterId = async (ctx: Context<{ params: { chapterId: string }, query: { isExam?: string } }>) => {
+    const { params, set, store, query } = ctx;
     const { chapterId } = params;
+    const { isExam } = query
     const { id, role } = store as StoreType;
+    const isExamMode = isExam === "true"
 
     try {
         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
@@ -278,7 +280,15 @@ export const getAllLessonsByChapterId = async (ctx: Context<{ params: { chapterI
         }
 
         if (role === "STUDENT") {
-            console.log("roool", role)
+
+            if (isExamMode) {
+                set.status = 200;
+                return {
+                    lessons,
+                    message: "Lessons fetched successfully (Exam Mode)"
+                };
+            }
+
             const enrollmentCollection = await getCollection(COURSE_ENROLLMENT_COLLECTION);
             const progressCollection = await getCollection(LESSON_PROGRESS_COLLECTION);
 
@@ -485,6 +495,7 @@ export const toggleLessonsStatusById = async (ctx: Context<{ params: { lessonId:
         return { error: "Failed to deactivate lesson" };
     }
 }
+
 export const deleteLesson = async (
     ctx: Context<{ params: { lessonId: string } }>
 ) => {
@@ -494,8 +505,9 @@ export const deleteLesson = async (
     try {
         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
         const coursesCollection = await getCollection(COURSE_COLLECTION);
+        const examsCollection = await getCollection(EXAM_COLLECTION);
 
-        // Find the lesson to delete
+
         const lesson = await lessonsCollection.findOne({
             _id: new ObjectId(lessonId),
             isDeleted: false,
@@ -506,9 +518,12 @@ export const deleteLesson = async (
             return { message: "Lesson not found" };
         }
 
-        // Soft delete the lesson
-        const result = await lessonsCollection.updateOne(
-            { _id: new ObjectId(lessonId) },
+        const lessonObjectId = new ObjectId(lessonId);
+        const courseId = new ObjectId(lesson.courseId);
+
+
+        const lessonDeleteResult = await lessonsCollection.updateOne(
+            { _id: lessonObjectId },
             {
                 $set: {
                     isActive: false,
@@ -518,32 +533,112 @@ export const deleteLesson = async (
             }
         );
 
-        if (result.modifiedCount === 0) {
+        if (lessonDeleteResult.modifiedCount === 0) {
             set.status = 500;
-            return { error: "Failed to delete lesson" };
+            return { error: "Failed to soft-delete lesson" };
         }
 
-        // Reduce course duration (use negative value for decrement)
-        const lessonDuration = lesson.duration || 0; // Safety check
+        const examsDeleteResult = await examsCollection.updateMany(
+            {
+                lessonId: lessonObjectId,
+                isDeleted: false,
+            },
+            {
+                $set: {
+                    isActive: false,
+                    isDeleted: true,
+                    updatedAt: new Date(),
+                },
+            }
+        );
+
+        console.log(`Soft-deleted ${examsDeleteResult.modifiedCount} exam(s) for lesson ${lessonId}`);
+
+        const lessonDuration = lesson.duration || 0;
 
         if (lessonDuration > 0) {
             await coursesCollection.updateOne(
-                { _id: new ObjectId(lesson.courseId), isDeleted: false },
+                { _id: courseId, isDeleted: false },
                 {
-                    $inc: { courseDurationMinutes: -lessonDuration }, // Decrement
+                    $inc: { courseDurationMinutes: -lessonDuration },
                     $set: { updatedAt: new Date() },
                 }
             );
         }
 
         set.status = 200;
-        return { message: "Lesson deleted successfully" };
+        return {
+            message: "Lesson and associated exams deleted successfully",
+            examsDeletedCount: examsDeleteResult.modifiedCount,
+        };
+
     } catch (error) {
-        console.error(error);
+        console.error("Error in deleteLesson:", error);
         set.status = 500;
-        return { error: "Failed to delete lesson", status: false };
+        return { error: "Internal server error while deleting lesson" };
     }
 };
+
+// export const deleteLesson = async (
+//     ctx: Context<{ params: { lessonId: string } }>
+// ) => {
+//     const { params, set } = ctx;
+//     const { lessonId } = params;
+
+//     try {
+//         const lessonsCollection = await getCollection(LESSONS_COLLECTION);
+//         const coursesCollection = await getCollection(COURSE_COLLECTION);
+//         const examsCollection   = await getCollection(EXAM_COLLECTION);   // ← add this
+
+//         // Find the lesson to delete
+//         const lesson = await lessonsCollection.findOne({
+//             _id: new ObjectId(lessonId),
+//             isDeleted: false,
+//         });
+
+//         if (!lesson) {
+//             set.status = 404;
+//             return { message: "Lesson not found" };
+//         }
+
+//         // Soft delete the lesson
+//         const result = await lessonsCollection.updateOne(
+//             { _id: new ObjectId(lessonId) },
+//             {
+//                 $set: {
+//                     isActive: false,
+//                     isDeleted: true,
+//                     updatedAt: new Date(),
+//                 },
+//             }
+//         );
+
+//         if (result.modifiedCount === 0) {
+//             set.status = 500;
+//             return { error: "Failed to delete lesson" };
+//         }
+
+//         // Reduce course duration (use negative value for decrement)
+//         const lessonDuration = lesson.duration || 0; // Safety check
+
+//         if (lessonDuration > 0) {
+//             await coursesCollection.updateOne(
+//                 { _id: new ObjectId(lesson.courseId), isDeleted: false },
+//                 {
+//                     $inc: { courseDurationMinutes: -lessonDuration }, // Decrement
+//                     $set: { updatedAt: new Date() },
+//                 }
+//             );
+//         }
+
+//         set.status = 200;
+//         return { message: "Lesson deleted successfully" };
+//     } catch (error) {
+//         console.error(error);
+//         set.status = 500;
+//         return { error: "Failed to delete lesson", status: false };
+//     }
+// };
 // export const deleteLesson = async (
 //     ctx: Context<{ params: { lessonId: string } }>
 // ) => {

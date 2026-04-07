@@ -1,5 +1,5 @@
 import { Context } from "elysia";
-import { AddQuestionToExamSchema, ExamCreateSchema, ExamGetSchema, ExamQuestionUpdate, GetAllExamQuestions, GetExamQuizQuestionsSchema, GetQuestionsById, GetSubmissionsSchema, submitExamQuizAnswersSchema } from "./exam.model";
+import { AddQuestionToExamSchema, DeleteExamQuestionSchema, ExamCreateSchema, ExamGetSchema, ExamQuestionUpdate, GetAllExamQuestions, GetExamQuizQuestionsSchema, GetQuestionsById, GetSubmissionsSchema, submitExamQuizAnswersSchema } from "./exam.model";
 import { getCollection } from "@lib/config/db.config";
 import { CHAPTERS_COLLECTION, COURSE_COLLECTION, COURSE_ENROLLMENT_COLLECTION, EXAM_COLLECTION, EXAM_QUIZ_COLLECTION, EXAM_SUBMISSION_COLLECTION, LESSONS_COLLECTION, STUDENT_COLLECTION } from "@lib/Db_collections";
 import { ObjectId } from "mongodb";
@@ -210,37 +210,37 @@ export const getExams = async (ctx: Context<{ query: ExamGetSchema }>) => {
             { $match: matchQuery },
 
             // === For STUDENTS: Join latest submission ===
-            ...(role === "STUDENT"
-                ? [
-                    {
-                        $lookup: {
-                            from: EXAM_SUBMISSION_COLLECTION,
-                            let: { examId: "$_id", studentId: new ObjectId(id) },
-                            pipeline: [
-                                {
-                                    $match: {
-                                        $expr: {
-                                            $and: [
-                                                { $eq: ["$examId", "$$examId"] },
-                                                { $eq: ["$studentId", "$$studentId"] },
-                                            ],
-                                        },
-                                    },
-                                },
-                                { $sort: { createdAt: -1 } },
-                                { $limit: 1 },
-                            ],
-                            as: "latestSubmission",
-                        },
-                    },
-                    // FILTER OUT tasks that have submissions
-                    {
-                        $match: {
-                            latestSubmission: { $size: 0 }
-                        }
-                    },
-                ]
-                : []),
+            // ...(role === "STUDENT"
+            //     ? [
+            //         {
+            //             $lookup: {
+            //                 from: EXAM_SUBMISSION_COLLECTION,
+            //                 let: { examId: "$_id", studentId: new ObjectId(id) },
+            //                 pipeline: [
+            //                     {
+            //                         $match: {
+            //                             $expr: {
+            //                                 $and: [
+            //                                     { $eq: ["$examId", "$$examId"] },
+            //                                     { $eq: ["$studentId", "$$studentId"] },
+            //                                 ],
+            //                             },
+            //                         },
+            //                     },
+            //                     { $sort: { createdAt: -1 } },
+            //                     { $limit: 1 },
+            //                 ],
+            //                 as: "latestSubmission",
+            //             },
+            //         },
+            //         // FILTER OUT tasks that have submissions
+            //         {
+            //             $match: {
+            //                 latestSubmission: { $size: 0 }
+            //             }
+            //         },
+            //     ]
+            //     : []),
 
             // Populate course/chapter/lesson
             {
@@ -481,81 +481,272 @@ function parseIfString<T>(value: T | string): T {
     return value;
 }
 
+// export const addQuestionToExam = async (ctx: Context<{ body: AddQuestionToExamSchema }>) => {
+//     const { body, set } = ctx;
+//     console.log(body, "fff");
+
+//     try {
+//         // ✅ Parse JSON-stringified fields that come through FormData
+//         body.question = parseIfString(body.question);
+//         body.options = parseIfString(body.options);
+
+//         if (body.questionImage instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+//         else if (
+//             body.question &&
+//             typeof body.question === "object" &&
+//             body.question.image instanceof File
+//         ) {
+//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+
+
+//         validateQuestionByType(body);
+
+//         const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
+
+//         let solution = body.solution as string;
+
+//         // ✅ If solution is a File (Blob), upload it to S3
+//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+//             solution = fullUrl;
+//         }
+
+//         const questionData = {
+//             ...body,
+//             solution,
+//             question: body.question,
+//             options: body.options,
+//             examId: new ObjectId(body.examId),
+//             isActive: true,
+//             createdAt: new Date(),
+//             updatedAt: new Date()
+//         };
+
+//         delete (questionData as any).questionImage;
+
+
+//         const result = await questionsCollection.insertOne(questionData);
+
+//         set.status = 201;
+//         return {
+//             success: true,
+//             message: "Question created successfully",
+//             data: {
+//                 id: result.insertedId,
+//                 ...questionData
+//             }
+//         };
+//     } catch (error: any) {
+//         console.log("Create Question Error", error);
+//         set.status = error.message.includes("must have") ? 400 : 500;
+//         return {
+//             success: false,
+//             message: error.message || "Failed to create question"
+//         };
+//     }
+// };
+
 export const addQuestionToExam = async (ctx: Context<{ body: AddQuestionToExamSchema }>) => {
     const { body, set } = ctx;
-    console.log(body, "fff");
 
     try {
-        // ✅ Parse JSON-stringified fields that come through FormData
         body.question = parseIfString(body.question);
         body.options = parseIfString(body.options);
 
+        // ── Question image ─────────────────────────────────────────────────────
         if (body.questionImage instanceof File) {
-            const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
-        }
-        else if (
-            body.question &&
-            typeof body.question === "object" &&
-            body.question.image instanceof File
-        ) {
-            const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
+            const { fullUrl } = await uploadFileToS3(body.questionImage, 'question_images');
+            body.question = { ...body.question, image: fullUrl };
+        } else if (body.question?.image instanceof File) {
+            const { fullUrl } = await uploadFileToS3(body.question.image, 'question_images');
+            body.question = { ...body.question, image: fullUrl };
         }
 
+        // ── Option images ──────────────────────────────────────────────────────
+        if (Array.isArray(body.options)) {
+            const uploadPromises = body.options.map(async (opt: any, i: number) => {
+                if (opt.type === 'IMAGE') {
+                    // Try both body[`optionImage_${i}`] and body.options[i] direct file
+                    const file =
+                        (body as any)[`optionImage_${i}`] ??
+                        (opt.answer instanceof File ? opt.answer : null);
+
+                    console.log(`Option ${i} file:`, file, typeof file); // 👈 Add this to debug
+
+                    if (file instanceof File) {
+                        const { fullUrl } = await uploadFileToS3(file, 'option_images');
+                        return { ...opt, answer: fullUrl };
+                    }
+
+                    // If answer is already a valid S3/http URL (edit mode), keep it
+                    if (
+                        typeof opt.answer === 'string' &&
+                        opt.answer.startsWith('http')
+                    ) {
+                        return opt;
+                    }
+
+                    // At this point it's a raw filename string — upload failed to resolve
+                    // Return as-is and log warning
+                    console.warn(`Option ${i} has IMAGE type but no File was found. Raw answer: ${opt.answer}`);
+                }
+                return opt;
+            });
+
+            body.options = await Promise.all(uploadPromises);
+        }
+
+        // Clean up raw optionImage_N fields before saving
+        for (let i = 0; i < 10; i++) {
+            delete (body as any)[`optionImage_${i}`];
+        }
 
         validateQuestionByType(body);
 
         const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
 
+        // ── Solution image ─────────────────────────────────────────────────────
         let solution = body.solution as string;
-
-        // ✅ If solution is a File (Blob), upload it to S3
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
-            const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+            const { fullUrl } = await uploadFileToS3(body.solution, 'solution_images');
             solution = fullUrl;
         }
 
         const questionData = {
             ...body,
             solution,
-            question: body.question,   // already parsed above
+            question: body.question,
             options: body.options,
             examId: new ObjectId(body.examId),
             isActive: true,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
         };
 
         delete (questionData as any).questionImage;
-
 
         const result = await questionsCollection.insertOne(questionData);
 
         set.status = 201;
         return {
             success: true,
-            message: "Question created successfully",
-            data: {
-                id: result.insertedId,
-                ...questionData
-            }
+            message: 'Question created successfully',
+            data: { id: result.insertedId, ...questionData },
         };
     } catch (error: any) {
-        console.log("Create Question Error", error);
-        set.status = error.message.includes("must have") ? 400 : 500;
-        return {
-            success: false,
-            message: error.message || "Failed to create question"
-        };
+        console.log('Create Question Error', error);
+        set.status = error.message.includes('must have') ? 400 : 500;
+        return { success: false, message: error.message || 'Failed to create question' };
     }
 };
+
+// export const updateExamQuestion = async (
+//     ctx: Context<{
+//         body: ExamQuestionUpdate;
+//         params: { questionId: string };
+//     }>
+// ) => {
+//     const { body, params, set } = ctx;
+//     const questionId = params.questionId;
+
+//     try {
+//         if (!ObjectId.isValid(questionId)) {
+//             set.status = 400;
+//             return { success: false, message: "Invalid question ID format" };
+//         }
+//         if (body.question) body.question = parseIfString(body.question);
+//         if (body.options) body.options = parseIfString(body.options);
+
+
+
+//         if (body.questionImage instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+//         // ✅ Legacy: also handle inline File on question.image
+//         else if (
+//             body.question &&
+//             typeof body.question === "object" &&
+//             body.question.image instanceof File
+//         ) {
+//             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
+//             body.question = {
+//                 ...body.question,
+//                 image: fullUrl
+//             };
+//         }
+
+
+//         const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
+
+//         const existing = await questionsCollection.findOne({
+//             _id: new ObjectId(questionId)
+//         });
+
+//         if (!existing) {
+//             set.status = 404;
+//             return { success: false, message: "Question not found" };
+//         }
+
+//         let solution = body.solution;
+//         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
+//             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
+//             solution = fullUrl;
+//         }
+
+//         const updatedData: any = {
+//             ...existing,
+//             ...body,
+//             solution,               // use resolved URL (or original string for TEXT/VIDEO)
+//             updatedAt: new Date()
+//         };
+
+
+//         delete updatedData.questionImage;
+
+//         if (body.examId) updatedData.examId = new ObjectId(body.examId);
+
+//         validateQuestionByType(updatedData);
+
+//         const result = await questionsCollection.updateOne(
+//             { _id: new ObjectId(questionId) },
+//             { $set: { ...updatedData, updatedAt: new Date() } }
+//         );
+
+//         if (result.matchedCount === 0) {
+//             set.status = 404;
+//             return { success: false, message: "Question not found" };
+//         }
+
+//         set.status = 200;
+//         return {
+//             success: true,
+//             message: "Question updated successfully",
+//             data: { id: questionId, ...updatedData }
+//         };
+//     } catch (error: any) {
+//         console.error("Update Question Error:", error);
+//         set.status = error.message?.includes("must have") ? 400 : 500;
+//         return {
+//             success: false,
+//             message: error.message || "Failed to update question"
+//         };
+//     }
+// };
 
 export const updateExamQuestion = async (
     ctx: Context<{
@@ -571,31 +762,53 @@ export const updateExamQuestion = async (
             set.status = 400;
             return { success: false, message: "Invalid question ID format" };
         }
+
+        // ✅ Parse JSON-stringified fields from FormData
         if (body.question) body.question = parseIfString(body.question);
         if (body.options) body.options = parseIfString(body.options);
 
-
-
+        // ✅ Handle question image upload
         if (body.questionImage instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.questionImage, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
-        }
-        // ✅ Legacy: also handle inline File on question.image
-        else if (
+            body.question = { ...body.question, image: fullUrl };
+        } else if (
             body.question &&
             typeof body.question === "object" &&
             body.question.image instanceof File
         ) {
             const { fullUrl } = await uploadFileToS3(body.question.image, "question_images");
-            body.question = {
-                ...body.question,
-                image: fullUrl
-            };
+            body.question = { ...body.question, image: fullUrl };
         }
 
+        // ✅ Handle option images — upload new Files, keep existing S3 URLs as-is
+        if (Array.isArray(body.options)) {
+            const uploadPromises = body.options.map(async (opt: any, i: number) => {
+                if (opt.type === 'IMAGE') {
+                    const file = (body as any)[`optionImage_${i}`];
+
+                    if (file instanceof File) {
+                        // New file uploaded — push to S3
+                        const { fullUrl } = await uploadFileToS3(file, "option_images");
+                        return { ...opt, answer: fullUrl };
+                    }
+
+                    // No new file — keep existing S3 URL unchanged
+                    if (typeof opt.answer === 'string' && opt.answer.startsWith('http')) {
+                        return opt;
+                    }
+
+                    console.warn(`Option ${i} has IMAGE type but no File or URL:`, opt.answer);
+                }
+                return opt;
+            });
+
+            body.options = await Promise.all(uploadPromises);
+        }
+
+        // ✅ Clean up raw optionImage_N fields before saving to DB
+        for (let i = 0; i < 4; i++) {
+            delete (body as any)[`optionImage_${i}`];
+        }
 
         const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
 
@@ -608,6 +821,7 @@ export const updateExamQuestion = async (
             return { success: false, message: "Question not found" };
         }
 
+        // ✅ Handle solution image upload
         let solution = body.solution;
         if (body.solutionType === SolutionType.IMAGE && body.solution instanceof File) {
             const { fullUrl } = await uploadFileToS3(body.solution, "solution_images");
@@ -617,11 +831,11 @@ export const updateExamQuestion = async (
         const updatedData: any = {
             ...existing,
             ...body,
-            solution,               // use resolved URL (or original string for TEXT/VIDEO)
+            solution,
             updatedAt: new Date()
         };
 
-
+        // Remove raw questionImage field — already merged into question.image
         delete updatedData.questionImage;
 
         if (body.examId) updatedData.examId = new ObjectId(body.examId);
@@ -1103,3 +1317,115 @@ export const GetSubmissions = async (ctx: Context<{ query: GetSubmissionsSchema 
         };
     }
 };
+export const studentExamReports = async (ctx: Context<{ query: GetSubmissionsSchema }>) => {
+    const { query, set, store } = ctx;
+    const { id, } = store as StoreType;
+    const { examId, page = "1", limit = "10" } = query;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    try {
+        const examSubmissionCollection = await getCollection(EXAM_SUBMISSION_COLLECTION);
+
+        if (!examId) {
+            set.status = 400;
+            return { error: "examId is required" };
+        }
+
+        const matchFilter: any = {
+            studentId: new ObjectId(id),
+            examId: new ObjectId(examId),
+        };
+
+        const pipeline: any[] = [
+            { $match: matchFilter },
+            {
+                $facet: {
+                    metaData: [
+                        { $count: "totalAttempts" }
+                    ],
+                    data: [
+                        { $sort: { submittedAt: -1 } },
+                        { $skip: skip },
+                        { $limit: limitNum },
+                        {
+                            $project: {
+                                _id: 1,
+                                submittedAt: 1,
+                                correctCount: 1,
+                                wrongCount: 1,
+                                totalQuestions: 1,
+                                scorePercentage: 1,
+                                isPassed: 1
+                            },
+                        },
+                    ],
+                },
+            },
+        ];
+
+        const [result] = await examSubmissionCollection.aggregate(pipeline).toArray();
+
+        const totalAttempts = result?.metaData[0]?.totalAttempts || 0;
+        const attempts = result?.data || [];
+
+        return {
+            examId,
+            studentId: id,
+            totalAttempts,
+            attempts,
+            pagination: {
+                total: totalAttempts,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(totalAttempts / limitNum),
+                hasNextPage: pageNum * limitNum < totalAttempts,
+                hasPrevPage: pageNum > 1,
+            },
+            message: "Exam reports retrieved successfully",
+        };
+
+    } catch (error) {
+        console.error("Error getting submissions:", error);
+        set.status = 500;
+        return {
+            error: "Failed to get submissions",
+            details: error instanceof Error ? error.message : "Unknown error"
+        };
+    }
+};
+export const examDeleteQuestion = async (ctx: Context<{ query: DeleteExamQuestionSchema }>) => {
+    const { query, set } = ctx;
+    const { questionId } = query;
+    try {
+
+        const questionsCollection = await getCollection(EXAM_QUIZ_COLLECTION);
+        const question = await questionsCollection.findOneAndDelete({
+            _id: new ObjectId(questionId),
+        });
+
+        if (!question) {
+            set.status = 404;
+            return {
+                success: false,
+                message: "Question not found"
+            };
+        }
+
+        set.status = 200;
+        return {
+            success: true,
+            message: "Question deleted successfully"
+        };
+
+    } catch (error: any) {
+        console.error("Delete question error:", error);
+        set.status = 400;
+        return {
+            success: false,
+            message: error.message || "Failed to delete question"
+        };
+    }
+}

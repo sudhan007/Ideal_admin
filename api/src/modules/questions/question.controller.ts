@@ -1,6 +1,6 @@
 import Elysia from "elysia";
-import { createQuestion, getAllQuestions, getQuestionById, getQuizQuestions, submitQuizAnswers, updateQuestion } from "./question.service";
-import { createQuestionDto, getAllQuizQuestionsDto, getQuestionsByIdDto, getQuizQuestionsDto, submitQuizAnswersDto, updateQuestionDto } from "./question.model";
+import { createQuestion, deleteQuestion, getAllQuestions, getQuestionById, getQuizQuestions, submitQuizAnswers, updateQuestion, } from "./question.service";
+import { createQuestionDto, deleteQuestionDto, getAllQuizQuestionsDto, getQuestionsByIdDto, getQuizQuestionsDto, submitQuizAnswersDto, updateQuestionDto } from "./question.model";
 import { studentOnly } from "@lib/utils/roles-guard";
 
 export const questionController = new Elysia({
@@ -16,5 +16,8 @@ export const questionController = new Elysia({
     .get("/all", getAllQuestions, getAllQuizQuestionsDto)
     .get("/:questionId", getQuestionById, getQuestionsByIdDto)
     .post("/submit", submitQuizAnswers, submitQuizAnswersDto)
+    .delete("/deletequestion", deleteQuestion, deleteQuestionDto)
+
+
 
 

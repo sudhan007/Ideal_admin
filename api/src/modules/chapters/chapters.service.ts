@@ -76,11 +76,12 @@ export const updateChapter = async (ctx: Context<{ body: UpdateChapterInput, par
         return { error: "Failed to update chapter", status: false };
     }
 }
-export const getAllChaptersByCourseId = async (ctx: Context<{ params: { courseId: string } }>) => {
-    const { params, set, store } = ctx;
+export const getAllChaptersByCourseId = async (ctx: Context<{ params: { courseId: string }, query: { isExam?: string } }>) => {
+    const { params, set, store, query } = ctx;
     const { courseId } = params;
+    const { isExam } = query
     const { id, role } = store as StoreType;
-
+    const isExamMode = isExam === "true"
     try {
         const chapterCollection = await getCollection(CHAPTERS_COLLECTION);
 
@@ -111,8 +112,18 @@ export const getAllChaptersByCourseId = async (ctx: Context<{ params: { courseId
 
         // For STUDENT role - check enrollment and progress
         if (role === "STUDENT") {
+
+            if (isExamMode) {
+                set.status = 200;
+                return {
+                    chapters,
+                    message: "Chapters fetched successfully (Exam Mode)"
+                };
+            }
             const enrollmentCollection = await getCollection(COURSE_ENROLLMENT_COLLECTION);
             const chapterProgressCollection = await getCollection(CHAPTER_PROGRESS_COLLECTION);
+
+
 
             // Check enrollment status
             const enrollment = await enrollmentCollection.findOne({

@@ -22,16 +22,11 @@ export const questionBase = t.Object({
         t.String()
     ]),
     questionImage: t.Optional(t.File()),
-    options: t.Optional(t.Union([
-        t.Array(
-            t.Object({
-                id: t.Enum(OptionType),
-                answer: t.String(),
-                type: t.Enum(OptionsFormat)
-            })
-        ),
-        t.String()
-    ])),
+    options: t.Union([t.String(), t.Array(t.Any())]),
+    optionImage_0: t.Optional(t.File()),
+    optionImage_1: t.Optional(t.File()),
+    optionImage_2: t.Optional(t.File()),
+    optionImage_3: t.Optional(t.File()),
     correctAnswer: t.String(),
     isActive: t.Optional(t.Boolean({ default: true })),
     ...baseFields.properties
@@ -65,16 +60,11 @@ export const questionUpdate = t.Partial(
         ])),
         // ✅ Top-level field — this is where the raw File arrives from FormData
         questionImage: t.Optional(t.File()),
-        options: t.Optional(t.Union([
-            t.Array(
-                t.Object({
-                    id: t.Enum(OptionType),
-                    answer: t.String(),
-                    type: t.Enum(OptionsFormat)
-                })
-            ),
-            t.String()
-        ])),
+        options: t.Union([t.String(), t.Array(t.Any())]),
+        optionImage_0: t.Optional(t.File()),
+        optionImage_1: t.Optional(t.File()),
+        optionImage_2: t.Optional(t.File()),
+        optionImage_3: t.Optional(t.File()),
         correctAnswer: t.String(),
     })
 )
@@ -194,9 +184,21 @@ export const getQuestionsByIdDto = {
     }
 }
 
+export const deleteQuestionDto = {
+    query: t.Object({
+        questionId: t.String({
+            description: "question ID"
+        }),
+    }),
+    detail: {
+        summary: "Delete Question",
+        description: "Delete Question"
+    }
+}
 export type CreateQuestionSchema = typeof createQuestionDto.body.static;
 export type GetQuizQuestionsSchema = typeof getQuizQuestionsDto.query.static;
 export type UpdateQuizSchema = typeof updateQuestionDto.body.static
 export type GetAllQuizQuestionsSchema = typeof getAllQuizQuestionsDto.query.static;
 export type GetQuestionsById = typeof getQuestionsByIdDto.params.static;
 export type SubmitQuizSchema = typeof submitQuizAnswersDto.body.static;
+export type DeleteQuestionSchema = typeof deleteQuestionDto.query.static;
